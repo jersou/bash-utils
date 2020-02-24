@@ -8,10 +8,16 @@ init() {
 }
 
 help() {
-  grep -o -P "^[a-zA-Z0-9\-_]+(?=\(\) \{)" "${BASH_SOURCE[1]}" | while read -r func; do
+  # grep -o -P "^[a-zA-Z0-9\-_]+(?=\(\) \{)" "${BASH_SOURCE[1]}" | while read -r func; do
+  sh_name=$(basename ${BASH_SOURCE[1]})
+  [[ -z ${HELP_HEADER:-} ]] || log "${HELP_HEADER:-}"
+  log "Usage : $sh_name [--help|<function name>]"
+  log "Functions ('main' by default) : "
+  for func in $(bash -c ". ${BASH_SOURCE[1]} ; typeset -F" | cut -d' ' -f3 | grep -v pipe_); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
-    log "→ $func : $help"
+    [[ -z $help ]] || help=" : $help"
+    log "  - ${func}${help}"
   done
 }
 

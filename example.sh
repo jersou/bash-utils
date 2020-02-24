@@ -9,7 +9,7 @@ main() {
   debug debug message
   error error message
   warn  warn message
-  test
+  test "$@"
 }
 
 test() {
@@ -31,7 +31,7 @@ cleanup() {
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then
   GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh
-  source "$GIT_TOPLEVEL/bash-utils.sh"
+  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️
   init
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
     trap cleanup EXIT ERR # run cleanup() function at exit
