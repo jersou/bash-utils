@@ -37,7 +37,11 @@ if [[ $0 == "${BASH_SOURCE[0]}" ]]; then
     trap cleanup EXIT ERR # run cleanup() function at exit
     main "$@" 2> >(pipe_error) | pipe_log # colorize stderr and stdout
   else # if the script has at least one argument, run the function $1
-    "$@"
+    if [[ $* == *--help* ]]; then
+      help
+    else
+      "$@"
+    fi
   fi
 fi
 
