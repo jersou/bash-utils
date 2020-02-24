@@ -66,3 +66,7 @@ pipe_warn() {
 }
 export -f pipe_warn
 
+# if the script is not being sourced
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then
+  help
+fi
