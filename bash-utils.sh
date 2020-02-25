@@ -42,7 +42,9 @@ utils:help() {
 }
 
 utils:hr() {
-  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+  for ((i = 0; i < ${1:-1}; i++)); do
+    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+  done
 }
 
 utils:print_line() {
