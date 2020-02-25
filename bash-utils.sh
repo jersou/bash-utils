@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
-utils:run() {
+utils:init() {
   set -o errexit
   set -o nounset
   set -o pipefail
   [[ -z ${TRACE:-} ]] || set -o xtrace
+}
+
+utils:run() {
+  utils:init
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
     if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
       main 2> >(utils:pipe_error) # colorize stderr (default)
