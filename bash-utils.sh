@@ -8,17 +8,22 @@ utils:init() {
   [[ ${PRINT_STACK_ON_ERROR:-true} == false ]] || trap utils:print_stack_on_error EXIT ERR # at exit
 }
 
-utils:run() {
+utils:run_main() {
   utils:init
+  if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+    main "$@" 2> >(utils:pipe_error) # colorize stderr (default)
+  else
+    main "$@"
+  fi
+}
+
+utils:run() {
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
-    if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
-      main 2> >(utils:pipe_error) # colorize stderr (default)
-    else
-      main
-    fi
+    utils:run_main "$@"
   elif [[ $* == *--help* ]]; then
     utils:help
   elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
+    utils:init
     if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
       "$@" 2> >(utils:pipe_error) # colorize stderr (default)
     else
