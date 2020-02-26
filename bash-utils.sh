@@ -175,8 +175,7 @@ utils:pipe_white() {
 }
 export -f utils:pipe_white
 
-# if the script is not being sourced
-if [[ $0 == "${BASH_SOURCE[0]}" ]]; then
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   IGNORE_UTILS_FUNCTIONS=false
   main() {
     utils:help

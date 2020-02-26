@@ -30,8 +30,7 @@ cleanup() {
 }
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
-  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" &&
-    git rev-parse --show-toplevel)
+  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh
   source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️ utils:* functions
   trap cleanup EXIT ERR                # run cleanup() at exit
