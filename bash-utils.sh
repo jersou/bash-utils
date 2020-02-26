@@ -18,7 +18,11 @@ utils:run() {
   elif [[ $* == *--help* ]]; then
     utils:help
   elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
-    "$@"
+    if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+      "$@" 2> >(utils:pipe_error) # colorize stderr (default)
+    else
+      "$@"
+    fi
   else
     echo "Unknown function '$1'"
   fi
@@ -35,13 +39,13 @@ utils:list_functions() {
 utils:help() {
   [[ -z ${HELP_HEADER:-} ]] || utils:log "${HELP_HEADER:-}"
   sh_name=$(basename "${BASH_SOURCE[1]}")
-  utils:log "Usage : $sh_name [--help|<function name>]"
-  utils:log "Functions ('main' by default) : "
+  echo "Usage : $sh_name [--help|<function name>]"
+  echo "Functions ('main' by default) : "
   for func in $(utils:list_functions); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
     [[ -z $help ]] || help=" : $help"
-    utils:log "  - ${func}${help}"
+    echo "  - ${func}${help}"
   done
 }
 
@@ -83,7 +87,7 @@ utils:print_color() {
 }
 
 utils:log() {
-  PREFIX_COLOR="\e[0;32m" utils:print_color "${@}"
+  PREFIX_COLOR="\e[0;32mℹ️  " utils:print_color "${@}"
 }
 utils:pipe_log() {
   utils:pipe_color utils:log

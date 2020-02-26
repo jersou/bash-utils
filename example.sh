@@ -8,12 +8,14 @@ main() {
   utils:debug debug message
   utils:error error message
   utils:warn warn message
-  test "$@"
+  utils:red red message
+  utils:green green message
+  utils:blue blue message
+  test
 }
 
 test() {
   declare help="test help"
-  echo "*=$*"
   echo stdout message
   echo stderr message 1>&2
 }
@@ -22,14 +24,16 @@ cleanup() {
   exitcode=$?
   # shellcheck disable=SC2034
   declare help="cleanup help"
-  echo cleanup
+  echo "→ → → cleanup"
+  utils:red cleanup
   exit $exitcode
 }
 
-# if the script is not sourced
-if [[ $0 == "${BASH_SOURCE[0]}" ]]; then
-  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
+  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" &&
+    git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh
-  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️
+  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️ utils:* functions
+  trap cleanup EXIT ERR                # run cleanup() at exit
   utils:run "$@"
 fi
