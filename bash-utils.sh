@@ -5,6 +5,7 @@ utils:init() {
   set -o nounset
   set -o pipefail
   [[ -z ${TRACE:-} ]] || set -o xtrace
+  [[ ${PRINT_STACK_ON_ERROR:-true} == false ]] || trap utils:print_stack_on_error EXIT ERR # at exit
 }
 
 utils:run() {
@@ -177,6 +178,23 @@ utils:pipe_white() {
   utils:pipe_color utils:white
 }
 export -f utils:pipe_white
+
+utils:stack() {
+  utils:red "Stack:"
+  local frame_number=1
+  while caller $frame_number; do
+    frame_number=$((frame_number + 1))
+  done | utils:pipe_red
+}
+
+utils:print_stack_on_error() {
+  exitcode=$?
+  if [[ $exitcode != 0 ]]; then
+    utils:stack
+    utils:orange "exit code = $exitcode"
+    exit $exitcode
+  fi
+}
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   IGNORE_UTILS_FUNCTIONS=false

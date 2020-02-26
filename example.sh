@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 main() {
-  declare help="main help"
-  echo "*=$*"
+  declare help="print example messages and run test()"
+  echo "args=$*"
   echo echo message
   utils:log log message
   utils:debug debug message
@@ -11,28 +11,20 @@ main() {
   utils:red red message
   utils:green green message
   utils:blue blue message
-  test
+  test "$@"
 }
 
 test() {
-  declare help="test help"
+  declare help="exit success if no arg"
   echo stdout message
   echo stderr message 1>&2
-}
-
-cleanup() {
-  exitcode=$?
-  # shellcheck disable=SC2034
-  declare help="cleanup help"
-  echo "→ → → cleanup"
-  utils:red cleanup
-  exit $exitcode
+  echo "args=$*"
+  [[ "$#" == 0 ]]
 }
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh
   source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️ utils:* functions
-  trap cleanup EXIT ERR                # run cleanup() at exit
   utils:run "$@"
 fi

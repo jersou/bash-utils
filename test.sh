@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
 echo ↓ ./example.sh --help
 ./example.sh --help
 echo
@@ -26,7 +22,7 @@ NO_COLOR=true ./bash-utils.sh --help |
   cut -d'-' -f2 |
   while read -r l; do
     echo "↓ ./bash-utils.sh $l msg"
-    ./bash-utils.sh $l msg
+    ./bash-utils.sh "$l" msg
     echo
   done
 
