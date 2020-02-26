@@ -50,8 +50,11 @@ utils:help() {
 }
 
 utils:hr() {
+  if [[ -z ${TERM:-} ]] && [[ -z ${COLUMNS:-} ]]; then
+    COLUMNS=120
+  fi
   for ((i = 0; i < ${1:-1}; i++)); do
-    printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+    printf '%*s\n' "${COLUMNS:-$(tput cols -T "${TERM:-dumb}")}" '' | tr ' ' -
   done
 }
 
