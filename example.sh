@@ -3,7 +3,7 @@
 main() {
   declare help="print example messages and run test()"
   echo "args=$*"
-  echo echo message
+  utils:exec echo message "$(basename "$0")"
   utils:log log message
   utils:debug debug message
   utils:error error message
@@ -11,7 +11,7 @@ main() {
   utils:red red message
   utils:green green message
   utils:blue blue message
-  test "$@"
+  utils:exec test "$@"
 }
 
 test() {

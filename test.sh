@@ -18,7 +18,7 @@ echo
 
 NO_COLOR=true ./bash-utils.sh --help |
   grep " - utils:" |
-  grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:print_color|print_line|utils:run|hr" |
+  grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:print_color|utils:print_line|utils:run|utils:hr|utils:msg" |
   cut -d'-' -f2 |
   while read -r l; do
     echo "↓ ./bash-utils.sh $l msg"

@@ -200,6 +200,10 @@ utils:print_stack_on_error() {
     exit $exitcode
   fi
 }
+utils:exec() {
+  utils:blue "→ " "$@"
+  "$@"
+}
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   IGNORE_UTILS_FUNCTIONS=false
