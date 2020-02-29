@@ -5,11 +5,14 @@ utils:init() {
   set -o nounset
   set -o pipefail
   [[ -z ${TRACE:-} ]] || set -o xtrace
-  [[ ${PRINT_STACK_ON_ERROR:-true} == false ]] || trap utils:print_stack_on_error EXIT ERR # at exit
+  [[ ${PRINT_STACK_ON_ERROR:-false} == false ]] || trap utils:print_stack_on_error EXIT ERR # at exit
 }
 
 utils:run_main() {
   utils:init
+
+  type main >/dev/null 2>&1 || (utils:error "main function doesn't exist" && exit)
+
   if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
     main "$@" 2> >(utils:pipe_error) # colorize stderr (default)
   else
@@ -98,6 +101,7 @@ utils:print_color() {
 utils:log() {
   PREFIX_COLOR="\e[0;32mℹ️  " utils:print_color "${@}"
 }
+
 utils:pipe_log() {
   utils:pipe_color utils:log
 }
@@ -200,9 +204,52 @@ utils:print_stack_on_error() {
     exit $exitcode
   fi
 }
+
 utils:exec() {
   utils:blue "→ " "$@"
   "$@"
+}
+
+utils:print_template() {
+
+  read -d '' template <<'EOF_TEMPLATE' || true
+#!/usr/bin/env bash
+
+main() {
+  declare help="main function"
+  echo "args=$*"
+  utils:exec echo message "$(basename "$0")"
+  utils:log log message
+  utils:debug debug message
+  utils:error error message
+  utils:warn warn message
+  utils:red red message
+  utils:green green message
+  utils:blue blue message
+  utils:exec test "$@"
+}
+
+cleanup() {
+  declare help="run at exit"
+  exitcode=$?
+  if [[ $exitcode != 0 ]]; then
+    utils:stack
+    utils:orange "exit code = $exitcode"
+    exit $exitcode
+  fi
+}
+
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
+  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
+  # shellcheck source=./bash-utils.sh
+  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️  utils:* functions
+  trap cleanup EXIT ERR # at exit
+  utils:run "$@"
+fi
+
+EOF_TEMPLATE
+
+  echo "$template"
 }
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced

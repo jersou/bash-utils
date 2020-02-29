@@ -26,6 +26,6 @@ NO_COLOR=true ./bash-utils.sh --help |
     echo
   done
 
-echo ↓ TRACE=1 ./example.sh
-TRACE=1 ./example.sh
+echo ↓ PRINT_STACK_ON_ERROR=true TRACE=1 ./example.sh
+PRINT_STACK_ON_ERROR=true TRACE=1 ./example.sh
 echo
