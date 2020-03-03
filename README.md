@@ -3,6 +3,7 @@
 
 Ce projet rassemble quelques fonctions et méthodes que j'utilise régulièrement.
 
+## Usage
 Pour l'utiliser, il faut sourcer le fichier bash-utils.sh :
 
 ```
@@ -10,9 +11,49 @@ source ./bash-utils.sh
 utils:log log message test
 ```
 
-
 ![test](./test.png)
 
+### Les fonctions
+```
+bash-utils.sh --help
+Usage : bash-utils.sh [--help|<function name>]
+Functions ('main' by default) : 
+  - utils:blue : print parameters with blue background : parameters
+  - utils:cyan : print parameters with cyan background : parameters
+  - utils:debug : print parameters in blue : 🐛  parameters
+  - utils:error : print parameters in red to stderr : ❌  parameters
+  - utils:exec : print parameter with plue background and execute parameters
+  - utils:green : print parameters with green background : parameters
+  - utils:help : print the help of all functions (the declare help='...')
+  - utils:hr : print N horizontal line, N=1 by default, N is the first parameter
+  - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if PRINT_STACK_ON_ERROR==true
+  - utils:list_functions : list all functions of the parent script
+  - utils:log : print parameters in green : ℹ️  parameters
+  - utils:orange : print parameters with orange background : parameters
+  - utils:pipe_blue : print each line of stdin with blue background : parameters
+  - utils:pipe_color : use the function $1 to print each line of stdin
+  - utils:pipe_cyan : print each line of stdin with cyan background : parameters
+  - utils:pipe_debug : print each line of stdin in blue : 🐛  stdin
+  - utils:pipe_error : print each line of stdin in red to stderr : ❌  stdin
+  - utils:pipe_green : print each line of stdin with green background : parameters
+  - utils:pipe_log : print each line of stdin in green : ℹ️  stdin
+  - utils:pipe_orange : print each line of stdin with orange background : parameters
+  - utils:pipe_purple : print each line of stdin with purple background : parameters
+  - utils:pipe_red : print each line of stdin with red background : parameters
+  - utils:pipe_warn : print each line of stdin in orange to stderr : ️⚠️  stdin
+  - utils:pipe_white : print each line of stdin with white background : parameters
+  - utils:print_color : pint each line of stdin with $PREFIX_COLOR at the beginning, except if NO_COLOR=true
+  - utils:print_line : print the $line variable with the $cmd function, use printf if tne line starts with color sequence
+  - utils:print_stack_on_error : print stack on error exit
+  - utils:print_template : print the stack on error exit
+  - utils:purple : print parameters with purple background : parameters
+  - utils:red : print parameters with red background : parameters
+  - utils:run : run utils:init and run the main function or the function $1, add color and use utils:pipe_error for stderr except if PIPE_MAIN_STDERR!=true
+  - utils:run_main : run utils:init and run the main function, add color and use utils:pipe_error for stderr except if PIPE_MAIN_STDERR!=true
+  - utils:stack : print current stack
+  - utils:warn : print parameters in orange to stderr : ️⚠️  parameters
+  - utils:white : print parameters with white background : parameters
+```
 
 ## Bonnes pratiques d'écriture de scripts bash
 Ci-dessous, quelques bonnes pratiques acquises avec l'expériance mais surtout pas
