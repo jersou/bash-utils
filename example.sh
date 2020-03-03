@@ -4,6 +4,7 @@ main() {
   declare help="print example messages and run test()"
   echo "args=$*"
   utils:exec echo message "$(basename "$0")"
+  echo message2
   utils:log log message
   utils:debug debug message
   utils:error error message
@@ -18,6 +19,7 @@ test() {
   declare help="exit success if no arg"
   echo stdout message
   echo stderr message 1>&2
+  sleep 0.01
   echo "args=$*"
   [[ "$#" == 0 ]]
 }

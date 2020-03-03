@@ -4,7 +4,7 @@ utils:init() {
   set -o errexit
   set -o nounset
   set -o pipefail
-  [[ -z ${TRACE:-} ]] || set -o xtrace
+  [[ ${TRACE:-0} != 1 ]] || set -o xtrace
   [[ ${PRINT_STACK_ON_ERROR:-false} == false ]] || trap utils:print_stack_on_error EXIT ERR # at exit
 }
 
