@@ -65,6 +65,11 @@ Quelques liens sur ce sujet:
 * https://github.com/progrium/bashstyle
 * http://google.github.io/styleguide/shellguide.html
 * https://google.github.io/styleguide/shellguide.html
+* https://wiki.bash-hackers.org/scripting/obsolete
+* https://jvns.ca/blog/2017/03/26/bash-quirks/
+* https://sap1ens.com/blog/2017/07/01/bash-scripting-best-practices/
+* https://blog.yossarian.net/2020/01/23/Anybody-can-write-good-bash-with-a-little-effort
+* http://mywiki.wooledge.org/BashFAQ/031
 * ...
 
 ### Arrêter l'exécution dès la première erreur
