@@ -56,8 +56,8 @@ Functions ('main' by default) :
 ```
 
 ## Bonnes pratiques d'écriture de scripts bash
-Ci-dessous, quelques bonnes pratiques acquises avec l'expériance mais surtout pas
-mal de lectures du web (bonne pratiques de mon point de vue...).
+Ci-dessous, quelques bonnes pratiques acquises avec l'expérience mais surtout pas
+mal de lectures du web (bonnes pratiques de mon point de vue...).
 
 Quelques liens sur ce sujet:
 * https://kvz.io/bash-best-practices.html
@@ -70,19 +70,19 @@ Quelques liens sur ce sujet:
 * https://sap1ens.com/blog/2017/07/01/bash-scripting-best-practices/
 * https://blog.yossarian.net/2020/01/23/Anybody-can-write-good-bash-with-a-little-effort
 * http://mywiki.wooledge.org/BashFAQ/031
-* ...
+
 
 ### Arrêter l'exécution dès la première erreur
-Ajouter dans le script : `set -o errexit`, toutes lescommande qui auront un code de sortie différent de 0 stoperont le déroulement du script.
+Ajouter dans le script : `set -o errexit`, toutes les commandes qui auront un code de sortie différent de 0 stoperont le déroulement du script.
 
 Cette règle est très importante. Par exemple :
 ```
 cd my_folder
 rm -rf *
 ```
-Sans l'option `errexit`, ce script effacera tous les fichiers du dossier courant si `my_folder` n'existe pas, alors qu'il s'arreterait en erreur sur le `cd` si il y avait eu un `set -o errexit` avant.
+Sans l'option `errexit`, ce script effacera tous les fichiers du dossier courant si `my_folder` n'existe pas, alors qu'il s'arreterait en erreur sur le `cd` s'il y avait eu un `set -o errexit` avant.
 
-Si on veut autoriser une commande à sortir en erreur, il faut ajouter `|| true` après cette dernière : `my_func || true`
+Si l'on veut autoriser une commande à sortir en erreur, il faut ajouter `|| true` après cette dernière : `my_func || true`
 
 C'est l'équivalent plus long de  `set -e`. Privilégiez la version longue qui est plus explicite.
 
@@ -94,7 +94,7 @@ C'est l'équivalent plus long de  `set -u`. Privilégiez la version longue qui e
 
 Penser à `${my_var:-}` pour initialiser my_var à une valeur vide (voir ci-dessous).
 
-### Initialiser les variables qui ont le droit d'être non inialisée
+### Initialiser les variables qui ont le droit d'être non inialisées
 
 Utiliser `${var:-default value}` pour définir une valeur par défaut si la variable
 n'est pas initialisée
@@ -269,7 +269,7 @@ do_something
 cd ..
 ```
 
-## Astusces
+## Astuces
 
 ### Activer l'affichage des commandes exécutées si TRACE=1
 Placer `[[ ${TRACE:-0} != 1 ]] || set -o xtrace` dans le script pour activer l'affichage des lignes de code exécutées facilement.
