@@ -229,8 +229,8 @@ utils:stack() {
 }
 
 utils:print_stack_on_error() {
-  declare help="print stack on error exit"
   exitcode=$?
+  declare help="print stack on error exit"
   if [[ $exitcode != 0 ]]; then
     utils:stack
     utils:orange "exit code = $exitcode"
