@@ -41,8 +41,6 @@ Functions ('main' by default) :
   - utils:pipe_red : print each line of stdin with red background : parameters
   - utils:pipe_warn : print each line of stdin in orange to stderr : ️⚠️  stdin
   - utils:pipe_white : print each line of stdin with white background : parameters
-  - utils:print_color : pint each line of stdin with $PREFIX_COLOR at the beginning, except if NO_COLOR=true
-  - utils:print_line : print the $line variable with the $cmd function, use printf if tne line starts with color sequence
   - utils:print_stack_on_error : print stack on error exit
   - utils:print_template : print the stack on error exit
   - utils:purple : print parameters with purple background : parameters
