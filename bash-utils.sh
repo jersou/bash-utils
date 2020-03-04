@@ -46,7 +46,7 @@ utils:list_functions() {
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
   else
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
-  fi
+  fi | grep -v '^_'
 }
 
 utils:help() {

@@ -75,11 +75,16 @@ grep -E "utils:[a-zA-Z0-9_]*" my_script.sh
 
 Il faudra certainement corriger un peu le formatage du fichier modifié
 
-## Bonnes pratiques d'écriture de scripts bash
-Ci-dessous, quelques bonnes pratiques acquises avec l'expérience mais surtout pas
-mal de lectures du web (bonnes pratiques de mon point de vue...).
 
-Quelques liens sur ce sujet:
+## Bonnes pratiques d'écriture de scripts bash
+
+**⚠ Disclaimer : les conseils indiqués ici sont de mon point de vue,
+rien que dans les liens ci-dessous, les avis divergent quelques fois des miens et
+ne sont pas unanimes sur tous les sujets.**
+
+
+Ci-dessous, quelques bonnes pratiques acquises avec l'expérience mais surtout avec pas
+mal de lectures du web, entre autre :
 * https://kvz.io/bash-best-practices.html
 * https://bertvv.github.io/cheat-sheets/Bash.html
 * https://github.com/progrium/bashstyle
@@ -287,6 +292,17 @@ plutôt que
 cd dir/
 do_something
 cd ..
+```
+
+### Fonctions privées
+Pour les fonctions qui ne sont pas destinées à être utilisées dans d'autres scripts,
+On peut préfixer le nom de la fonction par `_` et ne pas utiliser de préfixe de namespace :
+```
+_my_private_function() {
+}
+my_script:my_func() {
+  _my_private_function
+}
 ```
 
 ## Astuces
