@@ -55,6 +55,27 @@ Functions ('main' by default) :
   - utils:white : print parameters with white background : parameters
 ```
 
+## Supprimer les usages bash-utils 
+Il y un script qui permet de supprimer les usages des fonctions de `bash-utils.sh`
+si jamais l'on veut supprimer cette dépendance à ce projet :
+`remove_bash-utils.sh`
+
+On peut ajouter les chemins vers les fichiers à traiter en paramètres :
+```
+./remove_bash-utils.sh my_script1.sh my_script2.sh
+```
+ou on peut tester une conversion :
+```
+< example.sh ./remove_bash-utils.sh > example_without_bash-utils.sh
+```
+
+Pour vérifier s'il reste des usages de fonctions utils:* :
+```
+grep -E "utils:[a-zA-Z0-9_]*" my_script.sh
+```
+
+Il faudra certainement corriger un peu le formatage du fichier modifié
+
 ## Bonnes pratiques d'écriture de scripts bash
 Ci-dessous, quelques bonnes pratiques acquises avec l'expérience mais surtout pas
 mal de lectures du web (bonnes pratiques de mon point de vue...).

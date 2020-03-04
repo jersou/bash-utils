@@ -95,7 +95,7 @@ utils:pipe_color() {
 }
 
 utils:print_color() {
-  declare help="pint each line of stdin with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true"
+  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true"
   if [[ ${NO_COLOR:-false} == true ]]; then
     echo "${*}" | while read -r l; do
       printf "%s\n" "$l"
