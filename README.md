@@ -31,7 +31,6 @@ Functions ('main' by default) :
   - utils:log : print parameters in green : ℹ️  parameters
   - utils:orange : print parameters with orange background : parameters
   - utils:pipe_blue : print each line of stdin with blue background : parameters
-  - utils:pipe_color : use the function $1 to print each line of stdin
   - utils:pipe_cyan : print each line of stdin with cyan background : parameters
   - utils:pipe_debug : print each line of stdin in blue : 🐛  stdin
   - utils:pipe_error : print each line of stdin in red to stderr : ❌  stdin

@@ -82,7 +82,7 @@ utils:print_line() {
   fi
 }
 
-utils:pipe_color() {
+_pipe_color() {
   declare help="use the function \$1 to print each line of stdin"
   { set +x; } 2>/dev/null
   cmd=${1}
@@ -114,7 +114,7 @@ utils:log() {
 
 utils:pipe_log() {
   declare help=$'print each line of stdin in green : \e[0;32mℹ️  stdin\e[0m'
-  utils:pipe_color utils:log
+  _pipe_color utils:log
 }
 export -f utils:pipe_log
 
@@ -124,7 +124,7 @@ utils:debug() {
 }
 utils:pipe_debug() {
   declare help=$'print each line of stdin in blue : \e[0;36m🐛  stdin\e[0m'
-  utils:pipe_color utils:debug
+  _pipe_color utils:debug
 }
 export -f utils:pipe_debug
 
@@ -134,7 +134,7 @@ utils:error() {
 }
 utils:pipe_error() {
   declare help=$'print each line of stdin in red to stderr : \e[0;31m❌  stdin\e[0m'
-  utils:pipe_color utils:error
+  _pipe_color utils:error
 }
 export -f utils:pipe_error
 
@@ -144,7 +144,7 @@ utils:warn() {
 }
 utils:pipe_warn() {
   declare help=$'print each line of stdin in orange to stderr : \e[0;33m️⚠️  stdin\e[0m'
-  utils:pipe_color utils:warn
+  _pipe_color utils:warn
 }
 export -f utils:pipe_warn
 
@@ -179,43 +179,43 @@ utils:white() {
 
 utils:pipe_red() {
   declare help=$'print each line of stdin with red background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:red
+  _pipe_color utils:red
 }
 export -f utils:pipe_red
 
 utils:pipe_green() {
   declare help=$'print each line of stdin with green background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:green
+  _pipe_color utils:green
 }
 export -f utils:pipe_green
 
 utils:pipe_orange() {
   declare help=$'print each line of stdin with orange background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:orange
+  _pipe_color utils:orange
 }
 export -f utils:pipe_orange
 
 utils:pipe_blue() {
   declare help=$'print each line of stdin with blue background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:blue
+  _pipe_color utils:blue
 }
 export -f utils:pipe_blue
 
 utils:pipe_purple() {
   declare help=$'print each line of stdin with purple background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:purple
+  _pipe_color utils:purple
 }
 export -f utils:pipe_purple
 
 utils:pipe_cyan() {
   declare help=$'print each line of stdin with cyan background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:cyan
+  _pipe_color utils:cyan
 }
 export -f utils:pipe_cyan
 
 utils:pipe_white() {
   declare help=$'print each line of stdin with white background : \e[1;41;39mparameters\e[0m'
-  utils:pipe_color utils:white
+  _pipe_color utils:white
 }
 export -f utils:pipe_white
 

@@ -21,7 +21,6 @@ main() {
     -e 's/utils:exec *//g' \
     -e 's/utils:hr *[0-9]*/echo "--------------------------------------------------------------------------------"/g' \
     -e 's/utils:run_main *("\$@")?/main/g' \
-    -e 's/utils:pipe_color *[a-zA-Z0-9_]*/cat/g' \
     -e 's/utils:init/set -o errexit\nset -o nounset\nset -o pipefail\n[[ ${TRACE:-false} != true ]] || set -o xtrace/g' \
     -e 's/utils:stack/echo "Stack:"\nframe_number=1\nwhile caller $frame_number; do\n  frame_number=$((frame_number + 1))\ndone/g' \
     -e 's/utils:print_line/echo "${line}"/g' \
