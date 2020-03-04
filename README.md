@@ -337,16 +337,15 @@ Ensuite il est possible de se déplacer dans les dossier du projet ou référenc
 ### Utiliser flock pour éxécuter une partie du code une seule fois en même temps
 
 ```
-  lock_file=/var/lock/my_script.lock
-  (
+lock_file=/var/lock/my_script.lock
+(
     echo "wait $lock_file"
     flock -x 200
     echo "→ got $lock_file"
-		do stuff
-		...
-  ) 200>"$lock_file"
-	```
-
+    do stuff
+    ...
+) 200>"$lock_file"
+```
 
 
 ## TODO list
