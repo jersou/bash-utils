@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# https://github.com/jersou/bash-utils
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if PRINT_STACK_ON_ERROR==true"
@@ -101,6 +102,19 @@ utils:exec() {
     utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " "$@"
     "$@"
   fi
+}
+
+utils:flock_exec() {
+  declare help="run <\$2 ...> command with flock (mutex) on '/var/lock/\$1.lock' file"
+  utils:blue "→ flock_exec $1"
+  lock_file="/var/lock/$1.lock"
+  (
+    utils:orange "→ wait $lock_file"
+    flock -x 9
+    utils:green "→ got $lock_file"
+    shift
+    "$@"
+  ) 9>"$lock_file" # fd > 9 doesn't work with zsh
 }
 
 utils:print_template() {
