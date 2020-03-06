@@ -308,15 +308,15 @@ _pipe_color() {
 }
 
 _print_color() {
-  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true"
+  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use PRINTF_ENDLINE=\n by default"
   if [[ ${NO_COLOR:-false} == true ]]; then
-    echo "${*}" | while read -r l; do
+    while read -r l; do
       printf "%s%b" "$l" "${PRINTF_ENDLINE:-\\n}"
-    done
+    done <<<"${*}"
   else
-    echo "${*}" | while read -r l; do
+    while read -r l; do
       printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${PRINTF_ENDLINE:-\\n}"
-    done
+    done <<<"${*}"
   fi
 }
 
