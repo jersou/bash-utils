@@ -82,16 +82,31 @@ utils:print_stack_on_error() {
   fi
 }
 
+utils:countdown() {
+  for pc in $(seq "$1" -1 1); do
+    PRINTF_ENDLINE="            \\r" utils:blue "sleep $pc sec"
+    sleep 1
+  done
+  utils:debug "→ countdown $1 end            "
+}
+
 utils:exec() {
-  declare help="print parameter with plue background and execute parameters"
-  utils:blue "→ " "$@"
-  "$@"
+  declare help="print parameter with blue background and execute parameters, print time if PRINT_TIME=true"
+  if [[ ${PRINT_TIME:-false} == true ]]; then
+    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
+    time "$@"
+    sleep 0.1
+    utils:blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
+  else
+    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " "$@"
+    "$@"
+  fi
 }
 
 utils:print_template() {
   declare help="print a bash template"
 
-  read -d '' template <<'EOF_TEMPLATE' || true
+  read -r -d '' template <<'EOF_TEMPLATE' || true
 #!/usr/bin/env bash
 
 main() {
@@ -109,8 +124,8 @@ main() {
 }
 
 cleanup() {
-  declare help="print the stack on error exit"
   exitcode=$?
+  declare help="print the stack on error exit"
   if [[ $exitcode != 0 ]]; then
     utils:stack
     utils:orange "exit code = $exitcode"
@@ -282,11 +297,11 @@ _print_color() {
   declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true"
   if [[ ${NO_COLOR:-false} == true ]]; then
     echo "${*}" | while read -r l; do
-      printf "%s\n" "$l"
+      printf "%s%b" "$l" "${PRINTF_ENDLINE:-\\n}"
     done
   else
     echo "${*}" | while read -r l; do
-      printf "${PREFIX_COLOR}%s\e[0m\n" "$l"
+      printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${PRINTF_ENDLINE:-\\n}"
     done
   fi
 }
