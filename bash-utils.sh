@@ -52,9 +52,9 @@ utils:list_functions() {
 
 utils:help() {
   declare help="print the help of all functions (the declare help='...')"
-  [[ -z ${HELP_HEADER:-} ]] || utils:log "${HELP_HEADER:-}"
-  sh_name=$(basename "${BASH_SOURCE[1]}")
-  echo "Usage : $sh_name [--help|<function name>]"
+  [[ -z ${HELP_HEADER:-} ]] || echo "${HELP_HEADER:-}"
+  sh_name=$(basename "${BASH_SOURCE[-1]}")
+  echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
   echo "Functions ('main' by default) : "
   for func in $(utils:list_functions); do
     help=""
