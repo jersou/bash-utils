@@ -6,8 +6,10 @@ utils:init() {
   set -o errexit
   set -o nounset
   set -o pipefail
+  set -o errtrace
+  shopt -s inherit_errexit
   [[ ${TRACE:-false} != true ]] || set -o xtrace
-  [[ ${PRINT_STACK_ON_ERROR:-false} != true ]] || trap utils:print_stack_on_error EXIT ERR # at exit
+  [[ ${PRINT_STACK_ON_ERROR:-true} != true ]] || trap utils:print_stack_on_error ERR EXIT TERM INT # at exit
 }
 
 utils:run_main() {
