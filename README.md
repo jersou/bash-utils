@@ -72,7 +72,7 @@ grep -E "utils:[a-zA-Z0-9_]*" my_script.sh
 
 ## Bonnes pratiques d'écriture de scripts bash
 
-**⚠ Disclaimer : les pratiques indiquées ici sont considérées bonne de mon point de vue,
+**⚠ Disclaimer : les pratiques indiquées ici sont considérées bonnes de mon point de vue,
 rien que dans les liens ci-dessous, les avis divergent quelques fois des miens et
 ne sont pas unanimes sur tous les sujets.**
 
