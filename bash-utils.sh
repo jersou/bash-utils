@@ -145,7 +145,7 @@ cleanup() {
   if [[ $exitcode != 0 ]]; then
     utils:stack
     utils:orange "exit code = $exitcode"
-    exit $exitcode
+    return $exitcode
   fi
 }
 
