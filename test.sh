@@ -8,8 +8,8 @@ echo ↓ ./example.sh
 ./example.sh
 echo
 
-echo ↓ ./example.sh test arg1 arg2
-./example.sh test arg1 arg2
+echo ↓ PRINT_STACK_ON_ERROR=true ./example.sh test arg1 arg2
+PRINT_STACK_ON_ERROR=true ./example.sh test arg1 arg2
 echo
 
 echo ↓ NO_COLOR=true ./example.sh main arg1 arg2
