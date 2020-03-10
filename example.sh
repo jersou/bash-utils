@@ -13,6 +13,7 @@ main() {
   utils:green green message
   utils:blue blue message
   utils:exec test "$@"
+  utils:exec test --key=value || true
 }
 
 test() {
@@ -21,6 +22,7 @@ test() {
   echo stderr message 1>&2
   sleep 0.01
   echo "args=$*"
+  echo "key="$(utils:get_params "key" "$@")
   [[ "$#" == 0 ]]
 }
 
