@@ -119,17 +119,16 @@ utils:flock_exec() {
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
 }
 
-#  "$@" = "end" --standalone -s --error=msg1 file0 --error=msg2 -error=errr --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3" -- file4 -file5 --error=msg9 file6 --end
-#  utils:has_param "standalone" "$@"
-#  → exit code is
-#  utils:has_param "a" "$@"
-#  → exit code is
-#  utils:has_param "t" "$@"
-#  → exit code is
-#  utils:has_param "unknown" "$@"
-#  → exit code is
-#  utils:has_param "error|e" "$@"
-#  → exit code is
+# ${@} = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
+# utils:has_param "stln" "$@"      # → exit code is 0
+# utils:has_param "a" "$@"         # → exit code is 0
+# utils:has_param "z" "$@"         # → exit code is 1
+# utils:has_param "unknown" "$@"   # → exit code is 1
+# utils:has_param "err|e" "$@"     # → exit code is 0
+# utils:has_param "err |e " "$@"   # → exit code is 0
+# utils:has_param "z " "$@"        # → exit code is 1
+# utils:has_param "" "$@"          # → exit code is 0
+# utils:has_param "" -a -e         # → exit code is 1
 utils:has_param() {
   param_names=(${1//|/ })
   shift
@@ -156,7 +155,7 @@ utils:has_param() {
           return 1
           ;;
         --${param_name} | --${param_name}=*)
-          if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
+          if [[ $1 =~ ^(--${param_name}) ]]; then
             return 0
           fi
           ;;
@@ -174,23 +173,25 @@ utils:has_param() {
   return 1
 }
 
-#  "$@" = --standalone -s --error=msg1 file0 --error=msg2 -error=errr --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3" -- file4 -file5 --error=msg9 file6 --end
-#  utils:get_params "standalone" "$@"
-#  → print "true"
-#  utils:get_params "unknown" "$@"
-#  → print nothing
-#  utils:get_params "error|e" "$@"
-#  → print
-#  utils:get_params "a" "$@"
-#  → print
-#  utils:get_params "t" "$@"
-#  → print
-#  utils:get_params "" "$@"
-#  → print
-#  utils:get_params "error" "$@"
-#  → print
-#  utils:get_params "error " "$@"
-#  → print
+## return params $1 from $@
+## return the param $1 from $2... if $1 is empty, the separator "--" can be used to pass param that start with "-" as option ""
+## return all parameters that doesn't start with by '-'
+## $1 can contains several parameters : "error|e" → match --error=value or -e=value and print "value"
+## if param in $1 ends with a space, the format "--key value"/"-k value" → "--key=value" /"-k=value" remains valid
+## repetitions are supported : --error=a1 --error=a2 → print "a1 / a2" (2 lines)
+##
+#  "$@" = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
+### ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓   "/" is "\n"   ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+# utils:get_params "stln" "$@" # print true
+# utils:get_params "a" "$@" # print msg6 / true
+# utils:get_params "e" "$@" # print ERROR / msg4 / true / msg6
+# utils:get_params "z" "$@" # print  ""
+# utils:get_params "unknown" "$@" # print ""
+# utils:get_params "err|e" "$@" # print msg1 / msg2 / ERROR / true / msg4 / true / msg6
+# utils:get_params "err |e " "$@" # print msg1 / msg2 / ERROR / msg3 / msg4 / msg5 / msg6
+# utils:get_params "z " "$@" # print  ""
+# utils:get_params "" "$@" # print file0 / msg3 / msg5 / msg7 / msg8 / file 0 / file1 / file 2 / file4 / -file5 / --err=msg9 / file6 / --end
+# utils:has_param "" -a -e # print ""
 utils:get_params() {
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
