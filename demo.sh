@@ -33,11 +33,11 @@ params=(stln a e z unknown "err|e" "err |e " "z " "")
 
 for param in "${params[@]}"; do
   echo
-  #  echo "↓ ./bash-utils.sh utils:has_param \"$param\" $args_str"
-  #  ./bash-utils.sh utils:has_param "$param" "${args[@]}"
-  #  echo "→ exit code is $?"
-  echo "↓ ./bash-utils.sh utils:get_params \"$param\""
-  ./bash-utils.sh utils:get_params "$param" "${args[@]}" | tr "\n" "/"
+  echo "↓ ./bash-utils.sh utils:has_param \"$param\" $args_str"
+  ./bash-utils.sh utils:has_param "$param" "${args[@]}"
+  echo "→ exit code is $?"
+  echo "↓ ./bash-utils.sh utils:get_params \"$param\" $args_str"
+  ./bash-utils.sh utils:get_params "$param" "${args[@]}"
 done
 
 echo
