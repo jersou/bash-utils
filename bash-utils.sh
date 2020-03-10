@@ -31,7 +31,7 @@ utils:run() {
     utils:run_main "$@"
   elif [[ $* == *--help* ]]; then
     utils:help
-  elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
+  elif utils:utils_params_values_functions | grep -q "^$1\$"; then # run the function $1
     utils:init
     if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
       "$@" 2> >(utils:pipe_error) # colorize stderr (default)
@@ -43,8 +43,8 @@ utils:run() {
   fi
 }
 
-utils:list_functions() {
-  declare help="list all functions of the parent script"
+utils:utils_params_values_functions() {
+  declare help="utils_params_values all functions of the parent script"
   if [[ ${IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
   else
@@ -58,7 +58,7 @@ utils:help() {
   sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
   echo "Functions ('main' by default) : "
-  for func in $(utils:list_functions); do
+  for func in $(utils:utils_params_values_functions); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
     [[ -z $help ]] || help=" : $help"
@@ -133,7 +133,7 @@ utils:has_param() {
   declare help="same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise"
   param_names=(${1//|/ })
   shift
-  declare -a list
+  declare -a utils_params_values
   while [[ $# -gt 0 ]]; do
     if [[ "${param_names:-}" == "" ]]; then
       if [[ $1 == "--" ]]; then
@@ -198,16 +198,16 @@ utils:get_params() {
   declare help="print parameter value \$1 from \"\$@\" ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
-  declare -a list
+  declare -a utils_params_values
   while [[ $# -gt 0 ]]; do
     if [[ "${param_names:-}" == "" ]]; then
       if [[ $1 == "--" ]]; then
         shift
-        list+=("${@}")
+        utils_params_values+=("${@}")
         shift $#
       else
         if [[ $1 =~ ^[^-].*$ ]]; then
-          list+=("$1")
+          utils_params_values+=("$1")
         fi
         shift
       fi
@@ -226,33 +226,33 @@ utils:get_params() {
           ;;
         --${param_name}=*)
           if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
-            list+=("${BASH_REMATCH[2]}")
+            utils_params_values+=("${BASH_REMATCH[2]}")
             break
           fi
           ;;
         --${param_name})
           if [[ $permit_space_key_value_separator == true ]]; then
-            list+=("${2}")
+            utils_params_values+=("${2}")
             shift
           else
-            list+=(true)
+            utils_params_values+=(true)
           fi
           break
           ;;
         --*) ;;
         -*=*)
           if [[ "${#param_name}" == 1 && $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*$) ]]; then
-            list+=("${BASH_REMATCH[2]}")
+            utils_params_values+=("${BASH_REMATCH[2]}")
             break
           fi
           ;;
         -*)
           if [[ "${#param_name}" == 1 && $1 =~ ^-[^=]*${param_name}[^=]* ]]; then
             if [[ $permit_space_key_value_separator == true ]]; then
-              list+=("${2}")
+              utils_params_values+=("${2}")
               shift
             else
-              list+=(true)
+              utils_params_values+=(true)
             fi
             break
           fi
@@ -263,9 +263,9 @@ utils:get_params() {
     fi
   done
   if [[ "${UTILS_GET_FIRST_PARAM:-false}" == "true" ]]; then
-    echo "${list[1]}"
+    echo "${utils_params_values[1]}"
   else
-    for arg in "${list[@]}"; do
+    for arg in "${utils_params_values[@]}"; do
       echo "$arg"
     done
   fi
