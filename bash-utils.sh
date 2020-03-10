@@ -119,120 +119,156 @@ utils:flock_exec() {
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
 }
 
-#  "$@" = --standalone -s --error=msg1 file0 --error=msg2 --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3"
+#  "$@" = "end" --standalone -s --error=msg1 file0 --error=msg2 -error=errr --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3" -- file4 -file5 --error=msg9 file6 --end
 #  utils:has_param "standalone" "$@"
-#  → exit code is 0
+#  → exit code is
 #  utils:has_param "a" "$@"
-#  → exit code is 0
+#  → exit code is
 #  utils:has_param "t" "$@"
-#  → exit code is 0
+#  → exit code is
 #  utils:has_param "unknown" "$@"
-#  → exit code is 1
+#  → exit code is
 #  utils:has_param "error|e" "$@"
-#  → exit code is 0
+#  → exit code is
 utils:has_param() {
-  param_name="$1"
+  param_names=(${1//|/ })
   shift
-
-  if [[ $param_name =~ .*\|.* ]]; then
-    OLD_IFS=$IFS
-    IFS="|"
-    for part in $param_name; do
-      if utils:has_param "$part" "$@"; then
-        IFS=$OLD_IFS
-        return 0
+  declare -a list
+  while [[ $# -gt 0 ]]; do
+    if [[ "${param_names:-}" == "" ]]; then
+      if [[ $1 == "--" ]]; then
+        shift
+        if [[ $# -gt 0 ]]; then
+          return 0
+        else
+          return 1
+        fi
+      else
+        if [[ $1 =~ ^[^-].*$ ]]; then
+          return 0
+        fi
+        shift
       fi
-    done
-    IFS=$OLD_IFS
-    return 1
-  else
-    if [[ ${#param_name} == 1 ]]; then
-      while [[ $# -gt 0 ]]; do
+    else
+      for param_name in "${param_names[@]}"; do
         case $1 in
-        -[^-]*)
-          if [[ $1 =~ ^-[^=]*${param_name}[^=]*(=.*)?$ ]]; then
+        --)
+          return 1
+          ;;
+        --${param_name} | --${param_name}=*)
+          if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
             return 0
           fi
-          shift
           ;;
-        *)
-          shift
+        --*) ;;
+        -*=*)
+          if [[ "${#param_name}" == 1 ]] && [[ $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*$) ]]; then
+            return 0
+          fi
           ;;
         esac
       done
+      shift || true
     fi
-    while [[ $# -gt 0 ]]; do
-      case $1 in
-      --$param_name | --$param_name=*)
-        return 0
-        ;;
-      *)
+  done
+  return 1
+}
+
+#  "$@" = --standalone -s --error=msg1 file0 --error=msg2 -error=errr --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3" -- file4 -file5 --error=msg9 file6 --end
+#  utils:get_params "standalone" "$@"
+#  → print "true"
+#  utils:get_params "unknown" "$@"
+#  → print nothing
+#  utils:get_params "error|e" "$@"
+#  → print
+#  utils:get_params "a" "$@"
+#  → print
+#  utils:get_params "t" "$@"
+#  → print
+#  utils:get_params "" "$@"
+#  → print
+#  utils:get_params "error" "$@"
+#  → print
+#  utils:get_params "error " "$@"
+#  → print
+utils:get_params() {
+  IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
+  shift
+  declare -a list
+  while [[ $# -gt 0 ]]; do
+    if [[ "${param_names:-}" == "" ]]; then
+      if [[ $1 == "--" ]]; then
         shift
-        ;;
-      esac
+        list+=("${@}")
+        shift $#
+      else
+        if [[ $1 =~ ^[^-].*$ ]]; then
+          list+=("$1")
+        fi
+        shift
+      fi
+    else
+      for param_name in "${param_names[@]}"; do
+        if [[ "${param_name: -1}" == " " ]]; then
+          param_name="${param_name::-1}"
+          permit_space_key_value_separator=true
+        else
+          permit_space_key_value_separator=false
+        fi
+        case $1 in
+        --)
+          shift $#
+          break
+          ;;
+        --${param_name}=*)
+          if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
+            list+=("${BASH_REMATCH[2]}")
+            break
+          fi
+          ;;
+        --${param_name})
+          if [[ $permit_space_key_value_separator == true ]]; then
+            list+=("${2}")
+            shift
+          else
+            list+=(true)
+          fi
+          break
+          ;;
+        --*) ;;
+        -*=*)
+          if [[ "${#param_name}" == 1 && $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*$) ]]; then
+            list+=("${BASH_REMATCH[2]}")
+            break
+          fi
+          ;;
+        -*)
+          if [[ "${#param_name}" == 1 && $1 =~ ^-[^=]*${param_name}[^=]* ]]; then
+            if [[ $permit_space_key_value_separator == true ]]; then
+              list+=("${2}")
+              shift
+            else
+              list+=(true)
+            fi
+            break
+          fi
+          ;;
+        esac
+      done
+      shift || true
+    fi
+  done
+  if [[ "${UTILS_GET_FIRST_PARAM:-false}" == "true" ]]; then
+    echo "${list[1]}"
+  else
+    for arg in "${list[@]}"; do
+      echo "$arg"
     done
-    return 1
   fi
 }
 
-#  "$@" = --standalone -s --error=msg1 file0 --error=msg2 --error msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 file2 "file 3"
-#  utils:get_param "standalone" "$@"
-#  → print ""
-#  utils:get_param "error|e" "$@"
-#  → print "msg1 msg2 msg3 msg4 msg5 msg6"
-#  utils:get_params "a" "$@"
-#  → print "msg6 msg7"
-#  utils:get_params "t" "$@"
-#  → print "msg6 msg8"
-#  utils:get_params "" "$@"
-#  → print "file0 file1 file2"
 utils:get_param() {
-  param_name="$1"
-  shift
-  declare -a list
-
-  if [[ $param_name =~ .*\|.* ]]; then
-    OLD_IFS=$IFS
-    IFS="|"
-    for part in $param_name; do
-      list+=($(utils:get_param "$part" "$@"))
-    done
-    IFS=$OLD_IFS
-  else
-    if [[ ${#param_name} == 1 ]]; then
-      while [[ $# -gt 0 ]]; do
-        case $1 in
-        --*)
-          shift
-          ;;
-        -*=*)
-          if [[ $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*$) ]]; then
-            list+=("${BASH_REMATCH[2]}")
-          fi
-          shift
-          ;;
-        *)
-          shift
-          ;;
-        esac
-      done
-    fi
-    while [[ $# -gt 0 ]]; do
-      case $1 in
-      --$param_name=*)
-        if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
-          list+=("${BASH_REMATCH[2]}")
-        fi
-        shift
-        ;;
-      *)
-        shift
-        ;;
-      esac
-    done
-  fi
-
-  echo "${list[@]}"
+  UTILS_GET_FIRST_PARAM=true utils:get_params "$@"
 }
 
 utils:print_template() {
