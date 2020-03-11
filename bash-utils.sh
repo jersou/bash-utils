@@ -297,12 +297,7 @@ utils:parse_parameters() {
   declare help="set utils_params array from \"\$@\" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)"
   unset utils_params
   declare -gA utils_params
-
-  _print_utils_params
-  # TODO check param : if controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
-  # TODO
   local no_value_param_found=false
-
   while [[ $# -gt 0 ]]; do
     case $1 in
     --)
@@ -550,25 +545,20 @@ _pipe_color() {
 
 _print_color() {
   declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
-  if [[ ${NO_COLOR:-false} == true ]]; then
-    (
-      IFS=$'\n'
-      for p in "$@"; do
-        while read -r l; do
-          printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-        done <<<"$p"
+  (
+    params="$*"
+    IFS=$'\n'
+    lines=($params)
+    if [[ ${NO_COLOR:-false} == true ]]; then
+      for l in "${lines[@]}"; do
+        printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
       done
-    )
-  else
-    (
-      IFS=$'\n'
-      for p in "$@"; do
-        while read -r l; do
-          printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-        done <<<"$p"
+    else
+      for l in "${lines[@]}"; do
+        printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
       done
-    )
-  fi
+    fi
+  )
 }
 
 ########################################################################################################################
