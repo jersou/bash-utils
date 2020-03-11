@@ -31,7 +31,7 @@ utils:run() {
     utils:run_main "$@"
   elif [[ $* == *--help* ]]; then
     utils:help
-  elif utils:utils_params_values_functions | grep -q "^$1\$"; then # run the function $1
+  elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
     utils:init
     if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
       "$@" 2> >(utils:pipe_error) # colorize stderr (default)
@@ -43,7 +43,7 @@ utils:run() {
   fi
 }
 
-utils:utils_params_values_functions() {
+utils:list_functions() {
   declare help="utils_params_values all functions of the parent script"
   if [[ ${IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
@@ -58,7 +58,7 @@ utils:help() {
   sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
   echo "Functions ('main' by default) : "
-  for func in $(utils:utils_params_values_functions); do
+  for func in $(utils:list_functions); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
     [[ -z $help ]] || help=" : $help"
@@ -162,7 +162,7 @@ utils:has_param() {
           ;;
         --*) ;;
         -*=*)
-          if [[ "${#param_name}" == 1 ]] && [[ $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*$) ]]; then
+          if [[ "${#param_name}" == 1 ]] && [[ $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*)$ ]]; then
             return 0
           fi
           ;;
@@ -225,7 +225,7 @@ utils:get_params() {
           break
           ;;
         --${param_name}=*)
-          if [[ $1 =~ ^(--${param_name})=(.*$) ]]; then
+          if [[ $1 =~ ^(--${param_name})=(.*)$ ]]; then
             utils_params_values+=("${BASH_REMATCH[2]}")
             break
           fi
@@ -271,27 +271,86 @@ utils:get_params() {
   fi
 }
 
-utils:parse_parameters() {
-  declare help="WIP WIP WIP -- set utils_params"
+_append_params() {
+  if [ ${utils_params[$key]+true} ]; then
+    utils_params[$key]+=$'\n'"$value"
+  else
+    utils_params[$key]="$value"
+  fi
+}
 
+_print_utils_params() {
+  for key in "${!utils_params[@]}"; do
+    echo "utils_params[$key]=${utils_params[$key]}"
+  done
+}
+
+_check_no_value_param_found() {
+  if [[ $no_value_param_found == true ]]; then
+    utils:error "ERROR : param '$1' is placed after parameter that doesn't starts by a '-' : "
+    utils:print_stack
+    return 1
+  fi
+}
+
+utils:parse_parameters() {
+  declare help="set utils_params array from \"\$@\" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)"
+  unset utils_params
+  declare -gA utils_params
+
+  _print_utils_params
   # TODO check param : if controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
   # TODO
+  local no_value_param_found=false
 
-  set +o nounset
-  utils_params["--"]=""
-  set -o nounset
-
-  # TODO
-  utils_params[param1]=value1
-  utils_params[param2]=value2
-  utils_params["--"]="a n n"
-
-  echo "\${!utils_params[@]}=" "${!utils_params[@]}"
-  echo "\${utils_params[@]}=" "${utils_params[@]}"
-  echo "\${utils_params[param1]}=${utils_params[param1]}"
-
-  # TODO  tester avec bats
-
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    --)
+      shift
+      while [[ $# -gt 0 ]]; do
+        key=-- value="$1" _append_params
+        shift
+      done
+      ;;
+    --*=*)
+      _check_no_value_param_found "$@"
+      if [[ $1 =~ ^--(.+)=(.*)$ ]]; then
+        key="${BASH_REMATCH[1]}" value="${BASH_REMATCH[2]}" _append_params
+      fi
+      ;;
+    --*)
+      _check_no_value_param_found "$@"
+      if [[ $1 =~ ^--(.*)$ ]]; then
+        key="${BASH_REMATCH[1]}" value="true" _append_params
+      fi
+      ;;
+    -*=*)
+      _check_no_value_param_found "$@"
+      if [[ $1 =~ ^-(.+)=(.*)$ ]]; then
+        local keys="${BASH_REMATCH[1]}"
+        value="${BASH_REMATCH[2]}"
+        for ((i = 0; i < ${#keys}; i++)); do
+          key="${keys:$i:1}" _append_params
+        done
+      fi
+      ;;
+    -*)
+      _check_no_value_param_found "$@"
+      if [[ $1 =~ ^-(.+)$ ]]; then
+        local keys="${BASH_REMATCH[1]}"
+        value="true"
+        for ((i = 0; i < ${#keys}; i++)); do
+          key="${keys:$i:1}" _append_params
+        done
+      fi
+      ;;
+    *)
+      no_value_param_found=true
+      key=-- value="$1" _append_params
+      ;;
+    esac
+    shift || true
+  done
 }
 
 utils:get_param() {
@@ -497,7 +556,7 @@ _print_color() {
       for p in "$@"; do
         while read -r l; do
           printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-        done<<<"$p"
+        done <<<"$p"
       done
     )
   else
@@ -506,7 +565,7 @@ _print_color() {
       for p in "$@"; do
         while read -r l; do
           printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-        done<<<"$p"
+        done <<<"$p"
       done
     )
   fi

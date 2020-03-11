@@ -12,6 +12,12 @@ main() {
   utils:red "red message"
   utils:green "green message"
   utils:blue "blue message"
+  utils:parse_parameters "$@"
+  utils:hr
+  for key in "${!utils_params[@]}"; do
+    echo "utils_params[$key]=${utils_params[$key]}"
+  done
+  utils:hr
   utils:exec test "$@"
   utils:exec test --key=value || true
 }
