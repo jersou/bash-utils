@@ -127,15 +127,15 @@ utils:flock_exec() {
 # utils:has_param "err|e" "$@"     # → exit code is 0
 # utils:has_param "err |e " "$@"   # → exit code is 0
 # utils:has_param "z " "$@"        # → exit code is 1
-# utils:has_param "" "$@"          # → exit code is 0
-# utils:has_param "" -a -e         # → exit code is 1
+# utils:has_param "--" "$@"          # → exit code is 0
+# utils:has_param "--" -a -e         # → exit code is 1
 utils:has_param() {
   declare help="same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise"
   param_names=(${1//|/ })
   shift
   declare -a utils_params_values
   while [[ $# -gt 0 ]]; do
-    if [[ "${param_names:-}" == "" ]]; then
+    if [[ "${param_names:-}" == "--" ]]; then
       if [[ $1 == "--" ]]; then
         shift
         if [[ $# -gt 0 ]]; then
@@ -177,7 +177,7 @@ utils:has_param() {
 ## "utils:get_params" return the params $1 from $2...
 ##     utils:get_params "error" "$@"
 ##     print "vv" if $@ contains "--error=vv"
-## if $1 is "" return all parameters that doesn't start with by '-', the separator "--" can be used to pass param that start with "-" as option ""
+## if $1 is "--" return all parameters that doesn't start with by '-', the separator "--" can be used to pass param that start with "-" as option "--"
 ## $1 can contains several parameters : "error|e" → match --error=value or -e=value and print "value"
 ## if param in $1 ends with a space, the format "--key value"/"-k value" is supported, "--key=value" /"-k=value" remains valid
 ## repetitions are supported : --error=a1 --error=a2 → print "a1 / a2" (2 lines)
@@ -192,15 +192,15 @@ utils:has_param() {
 ## utils:get_params "err|e" "$@" # print msg1 / msg2 / ERROR / true / msg4 / true / msg6
 ## utils:get_params "err |e " "$@" # print msg1 / msg2 / ERROR / msg3 / msg4 / msg5 / msg6
 ## utils:get_params "z " "$@" # print ""
-## utils:get_params "" "$@" # print file0 / msg3 / msg5 / msg7 / msg8 / file 0 / file1 / file 2 / file4 / -file5 / --err=msg9 / file6 / --end
-## utils:get_params "" -a -e # print ""
+## utils:get_params "--" "$@" # print file0 / msg3 / msg5 / msg7 / msg8 / file 0 / file1 / file 2 / file4 / -file5 / --err=msg9 / file6 / --end
+## utils:get_params "--" -a -e # print ""
 utils:get_params() {
-  declare help="print parameter value \$1 from \"\$@\" ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
+  declare help="print parameter value \$1 from \"\$@\", if \$1 == '--' print last parameters that doesn't start with by '-' ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
   declare -a utils_params_values
   while [[ $# -gt 0 ]]; do
-    if [[ "${param_names:-}" == "" ]]; then
+    if [[ "${param_names:-}" == "--" ]]; then
       if [[ $1 == "--" ]]; then
         shift
         utils_params_values+=("${@}")
