@@ -87,7 +87,7 @@ utils:print_stack_on_error() {
 
 utils:countdown() {
   for pc in $(seq "$1" -1 1); do
-    PRINTF_ENDLINE="            \\r" utils:blue "sleep $pc sec"
+    UTILS_PRINTF_ENDLINE="            \\r" utils:blue "sleep $pc sec"
     sleep 1
   done
   utils:debug "→ countdown $1 end            "
@@ -199,10 +199,6 @@ utils:get_params() {
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
   utils_params_values=()
-
-  # TODO controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
-  # TODO  tester avec bats
-
   while [[ $# -gt 0 ]]; do
     if [[ "${param_names:-}" == "--" ]]; then
       if [[ $1 == "--" ]]; then
@@ -278,6 +274,7 @@ utils:get_params() {
 utils:parse_parameters() {
   declare help="WIP WIP WIP -- set utils_params"
 
+  # TODO check param : if controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
   # TODO
 
   declare -A utils_params
@@ -292,6 +289,8 @@ utils:parse_parameters() {
   echo "\${!utils_params[@]}=" "${!utils_params[@]}"
   echo "\${utils_params[@]}=" "${utils_params[@]}"
   echo "\${utils_params[param1]}=${utils_params[param1]}"
+
+  # TODO  tester avec bats
 
 }
 
@@ -491,14 +490,14 @@ _pipe_color() {
 }
 
 _print_color() {
-  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use PRINTF_ENDLINE=\n by default"
+  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   if [[ ${NO_COLOR:-false} == true ]]; then
     while read -r l; do
-      printf "%s%b" "$l" "${PRINTF_ENDLINE:-\\n}"
+      printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
     done <<<"${*}"
   else
     while read -r l; do
-      printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${PRINTF_ENDLINE:-\\n}"
+      printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
     done <<<"${*}"
   fi
 }
