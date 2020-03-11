@@ -198,7 +198,11 @@ utils:get_params() {
   declare help="print parameter value \$1 from \"\$@\", if \$1 == '--' print last parameters that doesn't start with by '-' ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
-  declare -a utils_params_values
+  utils_params_values=()
+
+  # TODO controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
+  # TODO  tester avec bats
+
   while [[ $# -gt 0 ]]; do
     if [[ "${param_names:-}" == "--" ]]; then
       if [[ $1 == "--" ]]; then
@@ -269,6 +273,26 @@ utils:get_params() {
       echo "$arg"
     done
   fi
+}
+
+utils:parse_parameters() {
+  declare help="WIP WIP WIP -- set utils_params"
+
+  # TODO
+
+  declare -A utils_params
+  set +o nounset
+  utils_params["--"]=
+  set -o nounset
+
+  utils_params[param1]=value1
+  utils_params[param2]=value2
+  utils_params["--"]="a n n"
+
+  echo "\${!utils_params[@]}=" "${!utils_params[@]}"
+  echo "\${utils_params[@]}=" "${utils_params[@]}"
+  echo "\${utils_params[param1]}=${utils_params[param1]}"
+
 }
 
 utils:get_param() {

@@ -22,7 +22,11 @@ test() {
   echo stderr message 1>&2
   sleep 0.01
   echo "args=$*"
+  echo "unk="$(utils:get_params "unk" "$@")
   echo "key="$(utils:get_params "key" "$@")
+  utils:get_params "key" "$@" >/dev/null
+  echo utils_params_values= "${utils_params_values[@]}"
+
   [[ "$#" == 0 ]]
 }
 
