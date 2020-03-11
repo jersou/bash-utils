@@ -5,13 +5,13 @@ main() {
   echo "args=$*"
   utils:exec echo message "$(basename "$0")"
   echo message2
-  utils:log log message
-  utils:debug debug message
-  utils:error error message
-  utils:warn warn message
-  utils:red red message
-  utils:green green message
-  utils:blue blue message
+  utils:log "log message"
+  utils:debug "debug message"
+  utils:error "error message"
+  utils:warn "warn message"
+  utils:red "red message"
+  utils:green "green message"
+  utils:blue "blue message"
   utils:exec test "$@"
   utils:exec test --key=value || true
 }

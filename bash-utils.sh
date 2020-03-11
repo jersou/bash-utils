@@ -101,7 +101,7 @@ utils:exec() {
     sleep 0.1
     utils:blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
   else
-    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " "$@"
+    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     "$@"
   fi
 }
@@ -277,11 +277,11 @@ utils:parse_parameters() {
   # TODO check param : if controle d'err si opt sans - trouvée avant fin des -*, sauf "--"
   # TODO
 
-  declare -A utils_params
   set +o nounset
-  utils_params["--"]=
+  utils_params["--"]=""
   set -o nounset
 
+  # TODO
   utils_params[param1]=value1
   utils_params[param2]=value2
   utils_params["--"]="a n n"
@@ -492,13 +492,23 @@ _pipe_color() {
 _print_color() {
   declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   if [[ ${NO_COLOR:-false} == true ]]; then
-    while read -r l; do
-      printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-    done <<<"${*}"
+    (
+      IFS=$'\n'
+      for p in "$@"; do
+        while read -r l; do
+          printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+        done<<<"$p"
+      done
+    )
   else
-    while read -r l; do
-      printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-    done <<<"${*}"
+    (
+      IFS=$'\n'
+      for p in "$@"; do
+        while read -r l; do
+          printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+        done<<<"$p"
+      done
+    )
   fi
 }
 

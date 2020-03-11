@@ -21,6 +21,7 @@ NO_COLOR=true ./bash-utils.sh --help |
   grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:run|utils:hr|utils:msg|utils:exec|utils:countdown" |
   cut -d'-' -f2 |
   while read -r l; do
+    ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe_purple
     echo "↓ ./bash-utils.sh $l msg"
     ./bash-utils.sh "$l" msg
     echo
