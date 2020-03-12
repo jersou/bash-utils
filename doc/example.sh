@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+main() {
+  declare help="print example messages and run test()"
+  utils:exec echo message "$(basename "$0") $*"
+  echo stdout message
+  echo stderr message 1>&2 && sleep 0.01
+  utils:hr
+  utils:log "log message"
+  utils:debug "debug message"
+  utils:error "error message"
+  utils:warn "warn message"
+  utils:red "red message"
+  utils:green "green message"
+  utils:blue "blue message"
+}
+
+test_params() {
+  # shellcheck disable=SC2034
+  declare help="exit success if no arg --key=value"
+  echo "unk=$(utils:get_params "unk" "$@")"
+  echo "key=$(utils:get_params "key" "$@")"
+  utils:hr
+  utils:parse_parameters "$@"
+  utils:blue "utils_params="
+  # shellcheck disable=SC2154
+  for key in "${!utils_params[@]}"; do
+    echo "    utils_params[$key]=${utils_params[$key]}"
+  done
+  [[ "$(utils:get_params "key" "$@")" != "value" ]]
+}
+
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # not being sourced
+  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
+  # shellcheck source=./bash-utils.sh
+  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️ utils:* functions
+  utils:run "$@"
+fi

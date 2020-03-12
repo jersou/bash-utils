@@ -4,19 +4,18 @@
 Ce projet rassemble quelques fonctions et méthodes que j'utilise régulièrement.
 
 ## Usage
-Pour l'utiliser, il faut sourcer le fichier bash-utils.sh :
+Pour l'utiliser, il faut sourcer le fichier bash-utils.sh : `source ./bash-utils.sh`
 
-```
-source ./bash-utils.sh
-utils:log log message test
-```
+Ensuite, les fonctions `utils:*` sont disponibles, par exemple : `utils:log log message test`
 
-![test](./test.png)
+![test](doc/test.png)
 
 ### Les fonctions
-```
-Usage : bash-utils.sh [--help | script_function_name [ARGS]...]
-Functions ('main' by default) : 
+./bash-utils.sh --help donne :
+`Usage : bash-utils.sh [--help | script_function_name [ARGS]...]`
+et :
+
+Functions ('main' by default) :
   - utils:blue : print parameters with blue background : parameters
   - utils:countdown
   - utils:cyan : print parameters with cyan background : parameters
@@ -24,13 +23,17 @@ Functions ('main' by default) :
   - utils:error : print parameters in red to stderr : ❌  parameters
   - utils:exec : print parameter with blue background and execute parameters, print time if PRINT_TIME=true
   - utils:flock_exec : run <$2 ...> command with flock (mutex) on '/var/lock/$1.lock' file
+  - utils:get_param : same as 'utils:get_params' but return the first result only
+  - utils:get_params : print parameter value $1 from "$@", if $1 == '--' print last parameters that doesn't start with by '-' ---- ='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if ='e |error '
   - utils:green : print parameters with green background : parameters
+  - utils:has_param : same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise
   - utils:help : print the help of all functions (the declare help='...')
   - utils:hr : print N horizontal line, N=1 by default, N is the first parameter
   - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if PRINT_STACK_ON_ERROR==true
-  - utils:list_functions : list all functions of the parent script
+  - utils:list_functions : utils_params_values all functions of the parent script
   - utils:log : print parameters in green : ℹ️  parameters
   - utils:orange : print parameters with orange background : parameters
+  - utils:parse_parameters : set utils_params array from "$@" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)
   - utils:pipe_blue : print each line of stdin with blue background : parameters
   - utils:pipe_cyan : print each line of stdin with cyan background : parameters
   - utils:pipe_debug : print each line of stdin in blue : 🐛  stdin
@@ -51,7 +54,6 @@ Functions ('main' by default) :
   - utils:stack : print current stack
   - utils:warn : print parameters in orange to stderr : ️⚠️  parameters
   - utils:white : print parameters with white background : parameters
-```
 
 ## Supprimer les usages de bash-utils.sh
 Il y un script qui permet de supprimer les usages des fonctions de `bash-utils.sh`

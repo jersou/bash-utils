@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 
-echo ↓ ./example.sh --help
+echo '↓ ./example.sh --help'
 ./example.sh --help
 echo
 
-echo ↓ ./example.sh
+echo '↓ ./example.sh'
 ./example.sh
 echo
 
-echo ↓ PRINT_STACK_ON_ERROR=true ./example.sh test arg1 arg2
-PRINT_STACK_ON_ERROR=true ./example.sh test arg1 arg2
+echo '↓ PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2'
+PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2
 echo
 
-echo ↓ NO_COLOR=true ./example.sh main arg1 arg2
+echo '↓ NO_COLOR=true ./example.sh main arg1 arg2'
 NO_COLOR=true ./example.sh main arg1 arg2
 echo
 
 NO_COLOR=true ./bash-utils.sh --help |
   grep -o -E " - utils:[a-zA-Z0-9_]+" |
-  grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:run|utils:hr|utils:msg|utils:exec|utils:countdown" |
+  grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:run|utils:hr|utils:msg|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param" |
   cut -d'-' -f2 |
   while read -r l; do
     ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe_purple
@@ -53,6 +53,6 @@ echo
 echo ↓ ./bash-utils.sh utils:countdown 5
 ./bash-utils.sh utils:countdown 5
 
-echo ↓ PRINT_STACK_ON_ERROR=true TRACE=1 ./example.sh
-PRINT_STACK_ON_ERROR=true TRACE=1 ./example.sh
+echo ↓ PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
+PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 echo
