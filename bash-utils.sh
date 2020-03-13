@@ -269,7 +269,7 @@ utils:get_params() {
     fi
   done
   if [[ "${UTILS_GET_FIRST_PARAM:-false}" == "true" ]]; then
-    echo "${utils_params_values[1]}"
+    echo "${utils_params_values[0]}"
   else
     for arg in "${utils_params_values[@]}"; do
       echo "$arg"
