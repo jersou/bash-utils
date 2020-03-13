@@ -39,7 +39,8 @@ utils:run() {
       "$@"
     fi
   else
-    echo "Unknown function '$1'"
+    utils:error "Unknown function '$1'"
+    return 1
   fi
 }
 

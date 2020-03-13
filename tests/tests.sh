@@ -6,6 +6,7 @@ main() {
     GREP_COLOR='1;31' grep --color=always -E --line-buffered '^|# skip$|^not ok' |
     GREP_COLOR='1;32' grep --color=always -E --line-buffered '^|^ok' || true
   print_summary
+  rm "$LOG_FILE"
 }
 
 print_summary() {
