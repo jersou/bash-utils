@@ -45,12 +45,17 @@ utils:run() {
 }
 
 utils:list_functions() {
-  declare help="utils_params_values all functions of the parent script"
+  declare help="utils_params_values all functions of the parent script, set UTILS_FILTER_PRIVATE_FUNCTIONS!= true to list _* functions"
   if [[ ${IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
   else
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
-  fi | grep -v '^_'
+  fi |
+    if [[ "${UTILS_FILTER_PRIVATE_FUNCTIONS:-true}" == "true" ]]; then
+      grep -v '^_'
+    else
+      cat
+    fi
 }
 
 utils:help() {
