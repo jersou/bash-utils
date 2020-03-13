@@ -238,6 +238,37 @@ On voit bien que malgré le `set -o errexit`, le `echo "← test_func end"` est 
 On peut aussi voir, dans ce dernier exemple,que le `shopt -s inherit_errexit` fait arrêter le script sur le `out=$(test_func)`
 alors que sans cette option, le script continu.
 
+#### pour récupérer le code de sortie malgré le errexit
+
+Si l'option `errexit` est activée, on ne peut pas obtenir le code de sortie de la précédente commande avec `$?`, car
+si ce code de sortie est différent de 0, le script s'arrete en erreur...
+
+une astuce consiste alors à utiliser `!` devant la commande, qui autorise la commande à échouer,
+mais où on peut alors récupérer le code de sortie dans `${PIPESTATUS[0]}`:
+```
+#!/usr/bin/env bash
+
+set -o errexit
+
+  (exit 0)
+echo "  (exit 0)  → \$?=$? -- \${PIPESTATUS[0]}=${PIPESTATUS[0]}"
+
+! (exit 0)
+echo "! (exit 0)  → \$?=$? -- \${PIPESTATUS[0]}=${PIPESTATUS[0]}"
+
+! (exit 15)
+echo "! (exit 15) → \$?=$? -- \${PIPESTATUS[0]}=${PIPESTATUS[0]}"
+```
+Va produire cette sortie :
+```
+  (exit 0)  → $?=0 -- ${PIPESTATUS[0]}=0
+! (exit 0)  → $?=1 -- ${PIPESTATUS[0]}=0
+! (exit 15) → $?=0 -- ${PIPESTATUS[0]}=15
+```
+`${PIPESTATUS[0]}` contient bien le code de sortie souhaité. Le fonctionnement de `PIPESTATUS` est décrit plus bas.
+
+Attention, les remarque du paragraphe `cette options n'est pas active dans certains cas`
+s'appliquent aussi à `! commande`
 
 ### Détecter les variables non initialisées
 Ajouter dans le script : `set -o nounset` pour que le script s'arrete en erreur si une variable non initialisée est utilisée.
@@ -270,7 +301,7 @@ echo $?
 ```
 Sans l'option `pipefail` et le script continuera même si l'option `errexit` est activée car le code de retour considéré sera celui de `exit 0`,
 alors qu'avec l'option `pipefail`, le code de sortie sera 1 et le script s'arretera alors si `errexit` est activé
-(le echo ne sera pas exécuté dans ce cas là car le script se sera arrêté sur le `exit 1`).
+(le `echo` ne sera pas exécuté dans ce cas là car le script se sera arrêté sur le `exit 1`).
 
 ```
 #!/usr/bin/env bash

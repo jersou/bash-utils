@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 main() {
-  declare help="print example messages and run test()"
+  declare help="print example messages"
   utils:exec echo message "$(basename "$0") $*"
   echo stdout message
   echo stderr message 1>&2 && sleep 0.01
@@ -27,7 +27,8 @@ test_params() {
   for key in "${!utils_params[@]}"; do
     echo "    utils_params[$key]=${utils_params[$key]}"
   done
-  [[ "$(utils:get_params "key" "$@")" != "value" ]]
+  [[ "${utils_params[key]}" != "value" ]] # ← utils_params[] need this call before : utils:parse_parameters "$@"
+  # or : [[ "$(utils:get_params "key" "$@")" != "value" ]] # ← don't need "utils:parse_parameters" call
 }
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # not being sourced
