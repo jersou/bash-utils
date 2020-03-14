@@ -55,6 +55,22 @@ Functions ('main' by default) :
   - utils:warn : print parameters in orange to stderr : ️⚠️  parameters
   - utils:white : print parameters with white background : parameters
 
+## Les variables d'environnement
+
+TODO
+
+  - UTILS_DEBUG
+  - UTILS_DEBUG_PIPES
+  - UTILS_ZENITY_DEBUG
+  - UTILS_PRINT_STACK_ON_ERROR
+  - TRACE
+  - UTILS_TRACE
+  - UTILS_PRINTF_ENDLINE
+  - UTILS_FILTER_PRIVATE_FUNCTIONS
+  - IGNORE_UTILS_FUNCTIONS
+
+TODO
+
 ## Supprimer les usages de bash-utils.sh
 Il y un script qui permet de supprimer les usages des fonctions de `bash-utils.sh`
 si jamais l'on veut supprimer cette dépendance à ce projet : `remove_bash-utils.sh`

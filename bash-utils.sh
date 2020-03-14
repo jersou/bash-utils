@@ -10,11 +10,25 @@ utils:init() {
   shopt -s inherit_errexit
   [[ ${TRACE:-false} != true ]] || set -o xtrace
   [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} != true ]] || trap utils:print_stack_on_error ERR TERM INT # at exit
-  if [[ ${UTILS_DEBUG:-false} == true ]]; then
+  if [[ ${UTILS_TRACE:-false} == true ]] || [[ ${UTILS_DEBUG:-false} == true ]] || [[ ${UTILS_ZENITY_DEBUG:-false} == true ]]; then
     set -o functrace
     trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
   fi
-  # TODO : trap RETURN if UTILS_DEBUG
+  if [[ ${UTILS_DEBUG:-false} == true ]]; then
+    utils_debug_index=1
+    UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
+    mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
+    utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
+    utils:log "${UTILS_DEBUG_PIPES}.out"
+    utils:log "${UTILS_DEBUG_PIPES}.in"
+    # TODO other terminals ?
+    if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
+      utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
+    else
+      utils:red "TO DEBUG, RUN :"
+      echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
+    fi
+  fi
 }
 
 utils:run_main() {
@@ -28,6 +42,7 @@ utils:run_main() {
   else
     main "$@"
   fi
+  _cleanup
 }
 
 utils:run() {
@@ -37,6 +52,11 @@ utils:run() {
   elif [[ $* == *--help* ]]; then
     utils:help
   elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
+    if [[ ${1:-} == "utils:debugger" ]]; then
+      UTILS_DEBUG=false
+      UTILS_TRACE=false
+      TRACE=false
+    fi
     utils:init
     if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
       "$@" 2> >(utils:pipe_error) # colorize stderr (default)
@@ -46,6 +66,17 @@ utils:run() {
   else
     utils:error "Unknown function '$1'"
     return 1
+  fi
+  _cleanup
+}
+
+_cleanup() {
+  if [[ ${UTILS_DEBUG:-false} == true ]]; then
+    trap - DEBUG
+    echo "exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
+    UTILS_DEBUG=false
+    _debug_command
+    rm "${UTILS_DEBUG_PIPES}.in" 2>/dev/null || true
   fi
 }
 
@@ -581,12 +612,41 @@ _debug() {
       zenity --text-info --width 600 --height 200 --filename=<(
         echo "debug: ${sh_source}:${lineno}"
         echo " → $BASH_COMMAND"
-      ) # --editable
-    else
+      )
+    elif [[ ${UTILS_DEBUG:-false} == true ]]; then
+      printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "$((utils_debug_index++))" "${lineno}" >"${UTILS_DEBUG_PIPES}.out"
+      _debug_command
+    elif [[ ${UTILS_TRACE:-false} == true ]]; then
       echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
       sleep 0.01
     fi
   fi >&2
+}
+
+_debug_command() {
+  local debug_command
+  read -r debug_command <"${UTILS_DEBUG_PIPES}.in"
+  # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
+  if [[ "$debug_command" == "continue" ]]; then
+    true
+  fi
+}
+
+utils:debugger() {
+  while true; do
+    read -r line <"${UTILS_DEBUG_PIPES}.out"
+    utils:green "$line"
+    if [[ "$line" == "exit 0" ]]; then
+      utils:red "→ press any key to exit"
+      read -r -n 1 cmd
+      echo continue >"${UTILS_DEBUG_PIPES}.in"
+      rm "${UTILS_DEBUG_PIPES}.out" 2>/dev/null || true
+      exit 0
+    fi
+    utils:blue "→ press any key to cotinue"
+    read -r -n 1 cmd
+    echo continue >"${UTILS_DEBUG_PIPES}.in"
+  done
 }
 
 ########################################################################################################################

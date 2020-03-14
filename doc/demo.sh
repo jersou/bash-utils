@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd "${BASH_SOURCE[0]%/*}" || exit 1
+
 echo '↓ ./example.sh --help'
 ./example.sh --help
 echo
@@ -15,6 +17,8 @@ echo
 echo '↓ NO_COLOR=true ./example.sh main arg1 arg2'
 NO_COLOR=true ./example.sh main arg1 arg2
 echo
+
+cd ".." || exit 1
 
 NO_COLOR=true ./bash-utils.sh --help |
   grep -o -E " - utils:[a-zA-Z0-9_]+" |
@@ -53,6 +57,11 @@ echo
 echo ↓ ./bash-utils.sh utils:countdown 5
 ./bash-utils.sh utils:countdown 5
 
+cd "${BASH_SOURCE[0]%/*}" || exit 1
 echo ↓ UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
+echo
+
+echo ↓ UTILS_TRACE=true ./example.sh
+UTILS_TRACE=true ./example.sh
 echo
