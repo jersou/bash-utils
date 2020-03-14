@@ -2,14 +2,19 @@
 # https://github.com/jersou/bash-utils
 
 utils:init() {
-  declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if PRINT_STACK_ON_ERROR==true"
+  declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
   set -o errexit
   set -o nounset
   set -o pipefail
   set -o errtrace
   shopt -s inherit_errexit
   [[ ${TRACE:-false} != true ]] || set -o xtrace
-  [[ ${PRINT_STACK_ON_ERROR:-false} != true ]] || trap utils:print_stack_on_error ERR TERM INT # at exit
+  [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} != true ]] || trap utils:print_stack_on_error ERR TERM INT # at exit
+  if [[ ${UTILS_DEBUG:-false} == true ]]; then
+    set -o functrace
+    trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
+  fi
+  # TODO : trap RETURN if UTILS_DEBUG
 }
 
 utils:run_main() {
@@ -294,7 +299,7 @@ _print_utils_params() {
 _check_no_value_param_found() {
   if [[ $no_value_param_found == true ]]; then
     utils:error "ERROR : param '$1' is placed after parameter that doesn't starts by a '-' : "
-    utils:print_stack
+    utils:stack
     return 1
   fi
 }
@@ -565,6 +570,15 @@ _print_color() {
       done
     fi
   )
+}
+_debug() {
+  sh_source=${1##*/}
+  lineno=$2
+  if [[ $sh_source != "bash-utils.sh" ]]; then
+    echo
+    echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
+    sleep 0.01
+  fi >&2
 }
 
 ########################################################################################################################

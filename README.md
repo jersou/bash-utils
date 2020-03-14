@@ -29,7 +29,7 @@ Functions ('main' by default) :
   - utils:has_param : same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise
   - utils:help : print the help of all functions (the declare help='...')
   - utils:hr : print N horizontal line, N=1 by default, N is the first parameter
-  - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if PRINT_STACK_ON_ERROR==true
+  - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true
   - utils:list_functions : utils_params_values all functions of the parent script
   - utils:log : print parameters in green : ℹ️  parameters
   - utils:orange : print parameters with orange background : parameters

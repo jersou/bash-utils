@@ -8,8 +8,8 @@ echo '↓ ./example.sh'
 ./example.sh
 echo
 
-echo '↓ PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2'
-PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2
+echo '↓ UTILS_PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2'
+UTILS_PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2
 echo
 
 echo '↓ NO_COLOR=true ./example.sh main arg1 arg2'
@@ -53,6 +53,6 @@ echo
 echo ↓ ./bash-utils.sh utils:countdown 5
 ./bash-utils.sh utils:countdown 5
 
-echo ↓ PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
-PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
+echo ↓ UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
+UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 echo
