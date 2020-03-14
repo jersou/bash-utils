@@ -578,10 +578,10 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]]; then
     echo
     if [[ ${UTILS_ZENITY_DEBUG:-false} == true ]]; then
-      zenity --text-info --filename=<(
+      zenity --text-info --width 600 --height 200 --filename=<(
         echo "debug: ${sh_source}:${lineno}"
         echo " → $BASH_COMMAND"
-      )
+      ) # --editable
     else
       echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
       sleep 0.01
