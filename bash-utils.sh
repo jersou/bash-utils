@@ -571,13 +571,21 @@ _print_color() {
     fi
   )
 }
+
 _debug() {
   sh_source=${1##*/}
   lineno=$2
   if [[ $sh_source != "bash-utils.sh" ]]; then
     echo
-    echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
-    sleep 0.01
+    if [[ ${UTILS_ZENITY_DEBUG:-false} == true ]]; then
+      zenity --text-info --filename=<(
+        echo "debug: ${sh_source}:${lineno}"
+        echo " → $BASH_COMMAND"
+      )
+    else
+      echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
+      sleep 0.01
+    fi
   fi >&2
 }
 
