@@ -21,7 +21,7 @@ utils:init() {
     utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
     utils:log "${UTILS_DEBUG_PIPES}.out"
     utils:log "${UTILS_DEBUG_PIPES}.in"
-    # TODO other terminals ?
+    # TODO other terminals ? auto detect term emu
     if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
       utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
     else
@@ -603,6 +603,8 @@ _print_color() {
   )
 }
 
+########################################################################################################################
+
 _debug() {
   sh_source=${1##*/}
   lineno=$2
@@ -614,13 +616,18 @@ _debug() {
         echo " → $BASH_COMMAND"
       )
     elif [[ ${UTILS_DEBUG:-false} == true ]]; then
-      printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "$((utils_debug_index++))" "${lineno}" >"${UTILS_DEBUG_PIPES}.out"
+      _send_debug_trace
       _debug_command
     elif [[ ${UTILS_TRACE:-false} == true ]]; then
       echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
       sleep 0.01
     fi
   fi >&2
+}
+
+_send_debug_trace() {
+  # TODO : define protocol
+  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "$((utils_debug_index++))" "${lineno}" >"${UTILS_DEBUG_PIPES}.out"
 }
 
 _debug_command() {
@@ -632,19 +639,33 @@ _debug_command() {
   fi
 }
 
+# TODO :
+#  UTILS_TRY_OPEN_TERMINAL_EMU
+#  sleep between
+#  set breakpoint
+#  next
+#  next N steps
+#  print env
+#  print diff env
+#  record env (to diff)
+#  exec
+#  print menu
+#  print stack trace
+
 utils:debugger() {
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
     utils:green "$line"
     if [[ "$line" == "exit 0" ]]; then
       utils:red "→ press any key to exit"
-      read -r -n 1 cmd
+      read -s -r -n 1 cmd
       echo continue >"${UTILS_DEBUG_PIPES}.in"
       rm "${UTILS_DEBUG_PIPES}.out" 2>/dev/null || true
       exit 0
     fi
+    # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
     utils:blue "→ press any key to cotinue"
-    read -r -n 1 cmd
+    read -s -r -n 1 cmd
     echo continue >"${UTILS_DEBUG_PIPES}.in"
   done
 }
