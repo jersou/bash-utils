@@ -619,7 +619,8 @@ _debug_command() {
     true
   fi
 }
-
+# TODO : mode debug dans le mm terminal : si stdin inutile
+# TODO : UTILS_DEBUG_MODE=...
 # TODO :
 #  UTILS_TRY_OPEN_TERMINAL_EMU
 #  sleep between
