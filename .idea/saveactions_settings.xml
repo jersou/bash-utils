@@ -7,8 +7,14 @@
         <option value="activateOnShortcut" />
         <option value="organizeImports" />
         <option value="reformat" />
+        <option value="executeAction" />
       </set>
     </option>
     <option name="configurationPath" value="" />
+    <option name="quickLists">
+      <list>
+        <option value="-1122231112" />
+      </list>
+    </option>
   </component>
 </project>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# https://github.com/jersou/bash-utils
+# from https://github.com/jersou/bash-utils
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -161,17 +161,17 @@ utils:flock_exec() {
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
 }
 
-# ${@} = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
-# utils:has_param "stln" "$@"      # → exit code is 0
-# utils:has_param "a" "$@"         # → exit code is 0
-# utils:has_param "z" "$@"         # → exit code is 1
-# utils:has_param "unknown" "$@"   # → exit code is 1
-# utils:has_param "err|e" "$@"     # → exit code is 0
-# utils:has_param "err |e " "$@"   # → exit code is 0
-# utils:has_param "z " "$@"        # → exit code is 1
-# utils:has_param "--" "$@"          # → exit code is 0
-# utils:has_param "--" -a -e         # → exit code is 1
 utils:has_param() {
+  # ${@} = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
+  # utils:has_param "stln" "$@"      # → exit code is 0
+  # utils:has_param "a" "$@"         # → exit code is 0
+  # utils:has_param "z" "$@"         # → exit code is 1
+  # utils:has_param "unknown" "$@"   # → exit code is 1
+  # utils:has_param "err|e" "$@"     # → exit code is 0
+  # utils:has_param "err |e " "$@"   # → exit code is 0
+  # utils:has_param "z " "$@"        # → exit code is 1
+  # utils:has_param "--" "$@"          # → exit code is 0
+  # utils:has_param "--" -a -e         # → exit code is 1
   declare help="same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise"
   param_names=(${1//|/ })
   shift
@@ -216,27 +216,27 @@ utils:has_param() {
   return 1
 }
 
-## "utils:get_params" return the params $1 from $2...
-##     utils:get_params "error" "$@"
-##     print "vv" if $@ contains "--error=vv"
-## if $1 is "--" return all parameters that doesn't start with by '-', the separator "--" can be used to pass param that start with "-" as option "--"
-## $1 can contains several parameters : "error|e" → match --error=value or -e=value and print "value"
-## if param in $1 ends with a space, the format "--key value"/"-k value" is supported, "--key=value" /"-k=value" remains valid
-## repetitions are supported : --error=a1 --error=a2 → print "a1 / a2" (2 lines)
-##
-##  "$@" = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
-## ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓   "/" is "\n"   ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
-## utils:get_params "stln" "$@" # print true
-## utils:get_params "a" "$@" # print msg6 / true
-## utils:get_params "e" "$@" # print ERROR / msg4 / true / msg6
-## utils:get_params "z" "$@" # print ""
-## utils:get_params "unknown" "$@" # print ""
-## utils:get_params "err|e" "$@" # print msg1 / msg2 / ERROR / true / msg4 / true / msg6
-## utils:get_params "err |e " "$@" # print msg1 / msg2 / ERROR / msg3 / msg4 / msg5 / msg6
-## utils:get_params "z " "$@" # print ""
-## utils:get_params "--" "$@" # print file0 / msg3 / msg5 / msg7 / msg8 / file 0 / file1 / file 2 / file4 / -file5 / --err=msg9 / file6 / --end
-## utils:get_params "--" -a -e # print ""
 utils:get_params() {
+  ## "utils:get_params" return the params $1 from $2...
+  ##     utils:get_params "error" "$@"
+  ##     print "vv" if $@ contains "--error=vv"
+  ## if $1 is "--" return all parameters that doesn't start with by '-', the separator "--" can be used to pass param that start with "-" as option "--"
+  ## $1 can contains several parameters : "error|e" → match --error=value or -e=value and print "value"
+  ## if param in $1 ends with a space, the format "--key value"/"-k value" is supported, "--key=value" /"-k=value" remains valid
+  ## repetitions are supported : --error=a1 --error=a2 → print "a1 / a2" (2 lines)
+  ##
+  ## "$@" = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
+  ## ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓   "/" is "\n"   ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓
+  ## utils:get_params "stln" "$@" # print true
+  ## utils:get_params "a" "$@" # print msg6 / true
+  ## utils:get_params "e" "$@" # print ERROR / msg4 / true / msg6
+  ## utils:get_params "z" "$@" # print ""
+  ## utils:get_params "unknown" "$@" # print ""
+  ## utils:get_params "err|e" "$@" # print msg1 / msg2 / ERROR / true / msg4 / true / msg6
+  ## utils:get_params "err |e " "$@" # print msg1 / msg2 / ERROR / msg3 / msg4 / msg5 / msg6
+  ## utils:get_params "z " "$@" # print ""
+  ## utils:get_params "--" "$@" # print file0 / msg3 / msg5 / msg7 / msg8 / file 0 / file1 / file 2 / file4 / -file5 / --err=msg9 / file6 / --end
+  ## utils:get_params "--" -a -e # print ""
   declare help="print parameter value \$1 from \"\$@\", if \$1 == '--' print last parameters that doesn't start with by '-' ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
@@ -273,7 +273,7 @@ utils:get_params() {
           fi
           ;;
         --${param_name})
-          if [[ $permit_space_key_value_separator == true ]]; then
+          if [[ ${permit_space_key_value_separator} == true ]]; then
             utils_params_values+=("${2}")
             shift
           else
@@ -290,7 +290,7 @@ utils:get_params() {
           ;;
         -*)
           if [[ "${#param_name}" == 1 && $1 =~ ^-[^=]*${param_name}[^=]* ]]; then
-            if [[ $permit_space_key_value_separator == true ]]; then
+            if [[ ${permit_space_key_value_separator} == true ]]; then
               utils_params_values+=("${2}")
               shift
             else
@@ -439,7 +439,6 @@ EOF_TEMPLATE
 }
 
 ########################################################################################################################
-
 utils:hr() {
   declare help="print N horizontal line, N=1 by default, N is the first parameter"
   if [[ -z ${TERM:-} ]] && [[ -z ${COLUMNS:-} ]]; then
@@ -449,18 +448,15 @@ utils:hr() {
     printf '%*s\n' "${COLUMNS:-$(tput cols -T "${TERM:-dumb}")}" '' | tr ' ' -
   done
 }
-
 utils:log() {
   declare help=$'print parameters in green : \e[0;32mℹ️  parameters\e[0m'
   PREFIX_COLOR="\e[0;32mℹ️  " _print_color "${@}"
 }
-
 utils:pipe_log() {
   declare help=$'print each line of stdin in green : \e[0;32mℹ️  stdin\e[0m'
   _pipe_color utils:log
 }
 export -f utils:pipe_log
-
 utils:debug() {
   declare help=$'print parameters in blue : \e[0;36m🐛  parameters\e[0m'
   PREFIX_COLOR="\e[0;36m🐛 " _print_color "${@}"
@@ -470,7 +466,6 @@ utils:pipe_debug() {
   _pipe_color utils:debug
 }
 export -f utils:pipe_debug
-
 utils:error() {
   declare help=$'print parameters in red to stderr : \e[0;31m❌  parameters\e[0m'
   PREFIX_COLOR="\e[0;31m❌️ " _print_color "${@}" 1>&2
@@ -480,7 +475,6 @@ utils:pipe_error() {
   _pipe_color utils:error
 }
 export -f utils:pipe_error
-
 utils:warn() {
   declare help=$'print parameters in orange to stderr : \e[0;33m️⚠️  parameters\e[0m'
   PREFIX_COLOR="\e[0;33m️⚠️  " _print_color "${@}" 1>&2
@@ -490,7 +484,6 @@ utils:pipe_warn() {
   _pipe_color utils:warn
 }
 export -f utils:pipe_warn
-
 utils:red() {
   declare help=$'print parameters with red background : \e[1;41;39mparameters\e[0m'
   PREFIX_COLOR="\e[1;41;39m" _print_color "${@}"
@@ -519,51 +512,42 @@ utils:white() {
   declare help=$'print parameters with white background : \e[1;47mparameters\e[0m'
   PREFIX_COLOR="\e[1;47m" _print_color "${@}"
 }
-
 utils:pipe_red() {
   declare help=$'print each line of stdin with red background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:red
 }
 export -f utils:pipe_red
-
 utils:pipe_green() {
   declare help=$'print each line of stdin with green background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:green
 }
 export -f utils:pipe_green
-
 utils:pipe_orange() {
   declare help=$'print each line of stdin with orange background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:orange
 }
 export -f utils:pipe_orange
-
 utils:pipe_blue() {
   declare help=$'print each line of stdin with blue background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:blue
 }
 export -f utils:pipe_blue
-
 utils:pipe_purple() {
   declare help=$'print each line of stdin with purple background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:purple
 }
 export -f utils:pipe_purple
-
 utils:pipe_cyan() {
   declare help=$'print each line of stdin with cyan background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:cyan
 }
 export -f utils:pipe_cyan
-
 utils:pipe_white() {
   declare help=$'print each line of stdin with white background : \e[1;41;39mparameters\e[0m'
   _pipe_color utils:white
 }
 export -f utils:pipe_white
-
 ########################################################################################################################
-
 _print_line() {
   declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
   if [[ "${line:0:1}" == $'\033' ]]; then
@@ -572,7 +556,6 @@ _print_line() {
     ${cmd} "$line"
   fi
 }
-
 _pipe_color() {
   declare help="use the function \$1 to print each line of stdin"
   { set +x; } 2>/dev/null
@@ -584,7 +567,6 @@ _pipe_color() {
     _print_line
   fi
 }
-
 _print_color() {
   declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   (
@@ -602,7 +584,6 @@ _print_color() {
     fi
   )
 }
-
 ########################################################################################################################
 
 _debug() {
