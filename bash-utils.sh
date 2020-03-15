@@ -60,7 +60,7 @@ utils:run() {
       TRACE=false
     fi
     utils:init
-    if [[ ${UTILS_DEBUG} == true ]]; then
+    if [[ ${UTILS_DEBUG:-false} == true ]]; then
       _run_debug_mode_true "$@" &
       utils:debugger
     else
@@ -609,6 +609,7 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
+      # TODO fix avertissement : substitution de commande: octet nul ignoré en entrée
       utils:green "$(_get_debug_trace)"
       ((utils_debug_index++))
       sleep 0.01
@@ -639,6 +640,7 @@ _debug_command() {
 }
 # TODO : mode debug dans le mm terminal : si stdin inutile
 # TODO : UTILS_DEBUG_MODE=...
+# TODO : add exec time
 # TODO :
 #  UTILS_TRY_OPEN_TERMINAL_EMU
 #  sleep between
@@ -656,6 +658,7 @@ utils:debugger() {
   utils:red "utils:debugger"
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
+    sleep 0.01
     utils:green "$line"
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
       utils:red "→ press any key to exit"
