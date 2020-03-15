@@ -161,6 +161,50 @@ utils:flock_exec() {
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
 }
 
+utils:print_template() {
+  declare help="print a bash template"
+
+  read -r -d '' template <<'EOF_TEMPLATE' || true
+#!/usr/bin/env bash
+
+main() {
+  declare help="main function"
+  echo "args=$*"
+  utils:exec echo message "$(basename "$0")"
+  utils:log log message
+  utils:debug debug message
+  utils:error error message
+  utils:warn warn message
+  utils:red red message
+  utils:green green message
+  utils:blue blue message
+  utils:exec test "$@"
+}
+
+cleanup() {
+  exitcode=$?
+  declare help="print the stack on error exit"
+  if [[ $exitcode != 0 ]]; then
+    utils:stack
+    utils:orange "exit code = $exitcode"
+    return $exitcode
+  fi
+}
+
+if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
+  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
+  # shellcheck source=./bash-utils.sh
+  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️  utils:* functions
+  trap cleanup EXIT ERR # at exit
+  utils:run "$@"
+fi
+
+EOF_TEMPLATE
+
+  echo "$template"
+}
+
+###################################################### GET PARAMS ######################################################
 utils:has_param() {
   # ${@} = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
   # utils:has_param "stln" "$@"      # → exit code is 0
@@ -394,51 +438,7 @@ utils:get_param() {
   declare help="same as 'utils:get_params' but return the first result only"
   UTILS_GET_FIRST_PARAM=true utils:get_params "$@"
 }
-
-utils:print_template() {
-  declare help="print a bash template"
-
-  read -r -d '' template <<'EOF_TEMPLATE' || true
-#!/usr/bin/env bash
-
-main() {
-  declare help="main function"
-  echo "args=$*"
-  utils:exec echo message "$(basename "$0")"
-  utils:log log message
-  utils:debug debug message
-  utils:error error message
-  utils:warn warn message
-  utils:red red message
-  utils:green green message
-  utils:blue blue message
-  utils:exec test "$@"
-}
-
-cleanup() {
-  exitcode=$?
-  declare help="print the stack on error exit"
-  if [[ $exitcode != 0 ]]; then
-    utils:stack
-    utils:orange "exit code = $exitcode"
-    return $exitcode
-  fi
-}
-
-if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
-  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
-  # shellcheck source=./bash-utils.sh
-  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️  utils:* functions
-  trap cleanup EXIT ERR # at exit
-  utils:run "$@"
-fi
-
-EOF_TEMPLATE
-
-  echo "$template"
-}
-
-########################################################################################################################
+##################################################### PRINT COLORS #####################################################
 utils:hr() {
   declare help="print N horizontal line, N=1 by default, N is the first parameter"
   if [[ -z ${TERM:-} ]] && [[ -z ${COLUMNS:-} ]]; then
@@ -547,7 +547,7 @@ utils:pipe_white() {
   _pipe_color utils:white
 }
 export -f utils:pipe_white
-########################################################################################################################
+
 _print_line() {
   declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
   if [[ "${line:0:1}" == $'\033' ]]; then
@@ -584,7 +584,7 @@ _print_color() {
     fi
   )
 }
-########################################################################################################################
+######################################################## DEBUG #########################################################
 
 _debug() {
   sh_source=${1##*/}
