@@ -18,16 +18,18 @@ _init_debug() {
     set -o functrace
     trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
     utils_debug_index=1
-    UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
-    mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
-    utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
-    utils:log "${UTILS_DEBUG_PIPES}.out"
-    utils:log "${UTILS_DEBUG_PIPES}.in"
 
+    if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
+      UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
+      mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
+      utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
+      utils:log "${UTILS_DEBUG_PIPES}.out"
+      utils:log "${UTILS_DEBUG_PIPES}.in"
+    fi
     if [[ ${UTILS_DEBUG} == "TERM" ]]; then
       # TODO other terminals ? auto detect term emu
       if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
-        echo utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
+        utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
       else
         utils:red "TO DEBUG, RUN :"
         echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
@@ -59,11 +61,7 @@ utils:run() {
     fi
     utils:init
     if [[ ${UTILS_DEBUG} == true ]]; then
-      if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
-        "$@" 2> >(utils:pipe_error) &# colorize stderr (default)
-      else
-        "$@" &
-      fi
+      _run_debug_mode_true "$@" &
       utils:debugger
     else
       if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
@@ -79,10 +77,20 @@ utils:run() {
   _cleanup
 }
 
+_run_debug_mode_true() {
+  if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+    # colorize stderr (default)
+    "$@" 2> >(utils:pipe_error)
+  else
+    "$@"
+  fi
+  echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
+}
+
 _cleanup() {
-  if [[ ${UTILS_DEBUG:-false} == true ]]; then
+  if [[ ${UTILS_DEBUG:-false} != false ]] && [[ ${UTILS_DEBUG:-false} != TRACE ]]; then
     trap - DEBUG
-    echo "exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
+    echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
     UTILS_DEBUG=false
     _debug_command
     rm "${UTILS_DEBUG_PIPES}.in" 2>/dev/null || true
@@ -601,9 +609,10 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
-      echo -e "\e[1;43m#[DEBUG] ${sh_source}:${lineno} → $BASH_COMMAND\e[0m"
+      utils:green "$(_get_debug_trace)"
+      ((utils_debug_index++))
       sleep 0.01
-    elif [[ ${UTILS_DEBUG:-false} == true ]]; then
+    elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
     fi
@@ -612,7 +621,12 @@ _debug() {
 
 _send_debug_trace() {
   # TODO : define protocol
-  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "$((utils_debug_index++))" "${lineno}" >"${UTILS_DEBUG_PIPES}.out"
+  _get_debug_trace >"${UTILS_DEBUG_PIPES}.out"
+  ((utils_debug_index++))
+}
+
+_get_debug_trace() {
+  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "${utils_debug_index}" "${lineno}"
 }
 
 _debug_command() {
@@ -643,18 +657,17 @@ utils:debugger() {
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
     utils:green "$line"
-    if [[ "$line" == "exit 0" ]]; then
+    if [[ "$line" == "#[DEBUG]exit 0" ]]; then
       utils:red "→ press any key to exit"
       read -s -r -n 1 cmd
-      echo continue >"${UTILS_DEBUG_PIPES}.in"
+      if [[ ${UTILS_DEBUG} != true ]]; then
+        echo continue >"${UTILS_DEBUG_PIPES}.in"
+      fi
       rm "${UTILS_DEBUG_PIPES}.out" 2>/dev/null || true
-      #      if [[ -n "$utils_run_pid" ]]; then
-      #        kill "$utils_run_pid"
-      #      fi
       exit 0
     fi
     # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
-    utils:blue "→ press any key to cotinue"
+    utils:blue "→ press any key to continue"
     read -s -r -n 1 cmd
     echo continue >"${UTILS_DEBUG_PIPES}.in"
   done
