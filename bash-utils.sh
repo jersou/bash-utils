@@ -8,39 +8,13 @@ utils:init() {
   set -o pipefail
   set -o errtrace
   shopt -s inherit_errexit
-  [[ ${TRACE:-false} != true ]] || set -o xtrace
-  [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} != true ]] || trap utils:print_stack_on_error ERR TERM INT # at exit
-  _init_debug
-}
-
-_init_debug() {
-  if [[ ${UTILS_DEBUG:-false} != false ]]; then
-    set -o functrace
-    trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
-    utils_debug_index=1
-
-    if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
-      UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
-      mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
-      utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
-      utils:log "${UTILS_DEBUG_PIPES}.out"
-      utils:log "${UTILS_DEBUG_PIPES}.in"
-    fi
-    if [[ ${UTILS_DEBUG} == "TERM" ]]; then
-      # TODO other terminals ? auto detect term emu
-      if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
-        utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
-      else
-        utils:red "TO DEBUG, RUN :"
-        echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
-      fi
-    elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
-      utils:red "TO DEBUG, RUN :"
-      echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
-    elif [[ ${UTILS_DEBUG} == true ]]; then
-      utils:orange "UTILS_DEBUG=true"
-    fi
+  if [[ ${TRACE:-false} == true ]]; then
+    set -o xtrace
   fi
+  if [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} == true ]]; then
+    trap utils:print_stack_on_error ERR TERM INT # at exit
+  fi
+  _init_debug
 }
 
 # deprecated, use : utils:run main "$@"
@@ -58,6 +32,8 @@ utils:run() {
     if [[ ${1:-} == "utils:debugger" ]]; then
       UTILS_DEBUG=false
       TRACE=false
+    else
+      unset UTILS_DEBUG_PIPES
     fi
     utils:init
     if [[ ${UTILS_DEBUG:-false} == true ]]; then
@@ -74,27 +50,7 @@ utils:run() {
     utils:error "Unknown function '$1'"
     return 1
   fi
-  _cleanup
-}
-
-_run_debug_mode_true() {
-  if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
-    # colorize stderr (default)
-    "$@" 2> >(utils:pipe_error)
-  else
-    "$@"
-  fi
-  echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
-}
-
-_cleanup() {
-  if [[ ${UTILS_DEBUG:-false} != false ]] && [[ ${UTILS_DEBUG:-false} != TRACE ]]; then
-    trap - DEBUG
-    echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
-    UTILS_DEBUG=false
-    _debug_command
-    rm "${UTILS_DEBUG_PIPES}.in" 2>/dev/null || true
-  fi
+  _cleanup_debug
 }
 
 utils:list_functions() {
@@ -603,13 +559,53 @@ _print_color() {
 }
 ######################################################## DEBUG #########################################################
 
+_init_debug() {
+  if [[ ${UTILS_DEBUG:-false} != false ]]; then
+    set -o functrace
+    trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
+    utils_debug_index=1
+
+    if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
+      UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
+      mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
+      utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
+      utils:log "${UTILS_DEBUG_PIPES}.out" >&2
+      utils:log "${UTILS_DEBUG_PIPES}.in" >&2
+    fi
+    if [[ ${UTILS_DEBUG} == "TERM" ]]; then
+      # TODO other terminals ? auto detect term emu
+      if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
+        utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null >&2
+      else
+        utils:red "TO DEBUG, RUN :" >&2
+        echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+      fi
+    elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
+      utils:red "TO DEBUG, RUN :" >&2
+      echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+    elif [[ ${UTILS_DEBUG} == true ]]; then
+      utils:orange "UTILS_DEBUG=true" >&2
+    fi
+  fi
+}
+
+_run_debug_mode_true() {
+  if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+    # colorize stderr (default)
+    "$@" </dev/null 2> >(utils:pipe_error 2>&1 | tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
+  else
+    "$@" </dev/null 2> >(tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
+  fi
+  echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
+}
+
 _debug() {
   sh_source=${1##*/}
   lineno=$2
   if [[ $sh_source != "bash-utils.sh" ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
-      # TODO fix avertissement : substitution de commande: octet nul ignoré en entrée
+      # TODO fix avertissement : substitution de commande : octet nul ignoré en entrée
       utils:green "$(_get_debug_trace)"
       ((utils_debug_index++))
       sleep 0.01
@@ -638,9 +634,9 @@ _debug_command() {
     true
   fi
 }
+# TODO: trap return, print exitcode and exec time ?
+# TODO : fix "avertissement : substitution de commande: octet nul ignoré en entrée" if UTILS_DEBUG=TRACE ou UTILS_DEBUG=true sur certains scripts qui en appellent d'autre qui utilisent bash-utils
 # TODO : mode debug dans le mm terminal : si stdin inutile
-# TODO : UTILS_DEBUG_MODE=...
-# TODO : add exec time
 # TODO :
 #  UTILS_TRY_OPEN_TERMINAL_EMU
 #  sleep between
@@ -655,27 +651,36 @@ _debug_command() {
 #  print stack trace
 
 utils:debugger() {
-  utils:red "utils:debugger"
+  utils:red "utils:debugger" >&2
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
     sleep 0.01
-    utils:green "$line"
+    utils:green "$line" >&2
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
-      utils:red "→ press any key to exit"
+      utils:red "→ press any key to exit" >&2
       read -s -r -n 1 cmd
       if [[ ${UTILS_DEBUG} != true ]]; then
         echo continue >"${UTILS_DEBUG_PIPES}.in"
       fi
-      rm "${UTILS_DEBUG_PIPES}.out" 2>/dev/null || true
+      rm "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in" "${UTILS_DEBUG_PIPES}.stdout" "${UTILS_DEBUG_PIPES}.stderr" 2>/dev/null || true
       exit 0
     fi
     # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
-    utils:blue "→ press any key to continue"
+    utils:blue "→ press any key to continue" >&2
     read -s -r -n 1 cmd
     echo continue >"${UTILS_DEBUG_PIPES}.in"
   done
 }
 
+_cleanup_debug() {
+  if [[ ${UTILS_DEBUG:-false} != false ]] && [[ ${UTILS_DEBUG:-false} != TRACE ]]; then
+    trap - DEBUG
+    echo "#[DEBUG]exit 0" >"${UTILS_DEBUG_PIPES}.out" || true
+    UTILS_DEBUG=false
+    _debug_command
+    rm "${UTILS_DEBUG_PIPES}.in" "${UTILS_DEBUG_PIPES}.stdout" "${UTILS_DEBUG_PIPES}.stderr" 2>/dev/null || true
+  fi
+}
 ########################################################################################################################
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
