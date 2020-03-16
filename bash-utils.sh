@@ -571,6 +571,7 @@ _init_debug() {
       utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
       utils:log "${UTILS_DEBUG_PIPES}.out" >&2
       utils:log "${UTILS_DEBUG_PIPES}.in" >&2
+      set_trap_exit_debug
     fi
     if [[ ${UTILS_DEBUG} == "TERM" ]]; then
       # TODO other terminals ? auto detect term emu
@@ -586,7 +587,9 @@ _init_debug() {
     elif [[ ${UTILS_DEBUG} == true ]]; then
       utils:orange "UTILS_DEBUG=true" >&2
     fi
+
   fi
+
 }
 
 _run_debug_mode_true() {
@@ -634,6 +637,7 @@ _debug_command() {
     true
   fi
 }
+
 # TODO: trap return, print exitcode and exec time ?
 # TODO : fix "avertissement : substitution de commande: octet nul ignoré en entrée" if UTILS_DEBUG=TRACE ou UTILS_DEBUG=true sur certains scripts qui en appellent d'autre qui utilisent bash-utils
 # TODO : mode debug dans le mm terminal : si stdin inutile
@@ -681,6 +685,27 @@ _cleanup_debug() {
     rm "${UTILS_DEBUG_PIPES}.in" "${UTILS_DEBUG_PIPES}.stdout" "${UTILS_DEBUG_PIPES}.stderr" 2>/dev/null || true
   fi
 }
+
+set_trap_exit_debug() {
+  trap_exit_cmd=$(trap -p EXIT)
+  trap_exit_cmd="${trap_exit_cmd% EXIT}"
+  trap_exit_cmd="${trap_exit_cmd#trap -- }"
+  if [[ "$trap_exit_cmd" =~ ^\'(.*)\'$ ]]; then
+    trap_exit_cmd="${BASH_REMATCH[1]}"
+  fi
+
+  if [[ "$trap_exit_cmd" == "" ]]; then
+    trap_exit_cmd="_trap_exit_debug"
+  else
+    trap_exit_cmd="$trap_exit_cmd ; _trap_exit_debug"
+  fi
+  trap "$trap_exit_cmd" EXIT
+}
+_trap_exit_debug() {
+  # TODO
+  echo _trap_exit_debug
+}
+
 ########################################################################################################################
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
