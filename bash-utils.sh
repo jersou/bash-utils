@@ -623,7 +623,7 @@ _send_debug_trace() {
 }
 
 _get_debug_trace() {
-  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → $BASH_COMMAND\n" "${utils_debug_index}" "${lineno}"
+  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → %s\n" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND"
 }
 
 _debug_command() {
