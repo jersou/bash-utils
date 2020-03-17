@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # from https://github.com/jersou/bash-utils
+# need bash > 4.3 (2014)
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -7,7 +8,8 @@ utils:init() {
   set -o nounset
   set -o pipefail
   set -o errtrace
-  shopt -s inherit_errexit
+  # workaround to hide "shopt: inherit_errexit: invalid shell option name" bash < v4.4
+  shopt -s inherit_errexit 2>/dev/null || true
   if [[ ${TRACE:-false} == true ]]; then
     set -o xtrace
   fi
