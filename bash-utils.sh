@@ -71,6 +71,7 @@ utils:list_functions() {
 
 utils:help() {
   declare help="print the help of all functions (the declare help='...')"
+  # TODO add bash-utils env var to help (TRACE, UTILS_DEBUG, ...)
   [[ -z ${HELP_HEADER:-} ]] || echo "${HELP_HEADER:-}"
   sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
@@ -95,11 +96,11 @@ utils:stack() {
 utils:print_stack_on_error() {
   exitcode=$?
   declare help="print stack on error exit"
-  if [[ $exitcode != 0 ]]; then
+  if [[ ${exitcode} != 0 ]]; then
     utils:stack
     utils:orange "exit code = $exitcode"
-    exit $exitcode
-  fi
+    exit ${exitcode}
+  fi >&2
 }
 
 utils:countdown() {
