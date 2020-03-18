@@ -567,8 +567,7 @@ _print_color() {
 
 _init_debug() {
   if [[ ${UTILS_DEBUG:-false} != false ]]; then
-    # increment UTILS_DEBUG_CALL_LEVEL
-    UTILS_DEBUG_CALL_LEVEL=$((${UTILS_DEBUG_CALL_LEVEL:-0} + 1))
+    export UTILS_DEBUG_CALL_LEVEL=$((${UTILS_DEBUG_CALL_LEVEL:-0} + 1))
 
     if [[ ${UTILS_DEBUG_CALL_LEVEL} -le ${UTILS_DEBUG_CALL_LEVEL_LIMIT:-2} ]]; then
       set -o functrace
@@ -637,12 +636,12 @@ _send_debug_trace() {
 
 _get_debug_trace() {
   local param_values
-  param_values="$(_get_param_values "$BASH_COMMAND")"
+  param_values="$(_get_param_values "$BASH_COMMAND" || true)"
   if [[ -n "$param_values" ]]; then
     param_values=" ← [${param_values%, }]"
   fi
 
-  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → %s%s\n" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND" "$param_values"
+  printf "#[DEBUG]%s#%-3s ${sh_source}:%-3s → %s%s\n" "$UTILS_DEBUG_CALL_LEVEL" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND" "$param_values"
 }
 _get_param_values() {
   # TODO améliorer affichage
