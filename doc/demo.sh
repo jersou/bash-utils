@@ -54,14 +54,18 @@ echo ↓ ./bash-utils.sh utils:get_params '"--"' -a -e
 echo
 echo
 
-echo ↓ ./bash-utils.sh utils:countdown 5
-./bash-utils.sh utils:countdown 5
+echo ↓ ./bash-utils.sh utils:countdown 3
+./bash-utils.sh utils:countdown 3
 
-cd "${BASH_SOURCE[0]%/*}" || exit 1
+cd "doc" || exit 1
 echo ↓ UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 echo
 
 echo ↓ UTILS_TRACE=true ./example.sh
 UTILS_TRACE=true ./example.sh
+echo
+
+echo ↓ UTILS_DEBUG=TRACE ./example.sh
+UTILS_DEBUG=TRACE ./example.sh
 echo

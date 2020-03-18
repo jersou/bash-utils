@@ -21,7 +21,7 @@ Functions ('main' by default) :
   - utils:cyan : print parameters with cyan background : parameters
   - utils:debug : print parameters in blue : 🐛  parameters
   - utils:error : print parameters in red to stderr : ❌  parameters
-  - utils:exec : print parameter with blue background and execute parameters, print time if PRINT_TIME=true
+  - utils:exec : print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true
   - utils:flock_exec : run <$2 ...> command with flock (mutex) on '/var/lock/$1.lock' file
   - utils:get_param : same as 'utils:get_params' but return the first result only
   - utils:get_params : print parameter value $1 from "$@", if $1 == '--' print last parameters that doesn't start with by '-' ---- ='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if ='e |error '
@@ -632,3 +632,6 @@ un script où on voudrait enlever la dépendance :
   * remplacer les `log`/`warn`/... par des echo
   * supprimer les `utils:exec`
   * remplacer les `utils:run_main` par `main`
+* ajout de "local" dans les bonnes pratiques
+* traiter les TODO du code
+

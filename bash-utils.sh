@@ -73,14 +73,14 @@ utils:list_functions() {
 utils:help() {
   declare help="print the help of all functions (the declare help='...')"
   # TODO add bash-utils env var to help (TRACE, UTILS_DEBUG, ...)
-  [[ -z ${HELP_HEADER:-} ]] || echo "${HELP_HEADER:-}"
-  sh_name=$(basename "${BASH_SOURCE[-1]}")
+  [[ -z ${UTILS_HELP_HEADER:-} ]] || echo "${UTILS_HELP_HEADER:-}"
+  local sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
   echo "Functions ('main' by default) : "
   for func in $(utils:list_functions); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
-    [[ -z $help ]] || help=" : $help"
+    [[ -z ${help} ]] || help=" : $help"
     echo "  - ${func}${help}"
   done
 }
@@ -89,13 +89,13 @@ utils:stack() {
   declare help="print current stack"
   utils:red "Stack:"
   local frame_number=1
-  while caller $frame_number; do
+  while caller ${frame_number}; do
     frame_number=$((frame_number + 1))
   done | utils:pipe_red
 }
 
 utils:print_stack_on_error() {
-  exitcode=$?
+  local exitcode=$?
   declare help="print stack on error exit"
   if [[ ${exitcode} != 0 ]]; then
     utils:stack
@@ -113,8 +113,8 @@ utils:countdown() {
 }
 
 utils:exec() {
-  declare help="print parameter with blue background and execute parameters, print time if PRINT_TIME=true"
-  if [[ ${PRINT_TIME:-false} == true ]]; then
+  declare help="print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true"
+  if [[ ${UTILS_PRINT_TIME:-false} == true ]]; then
     utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     time "$@"
     sleep 0.1
@@ -128,7 +128,7 @@ utils:exec() {
 utils:flock_exec() {
   declare help="run <\$2 ...> command with flock (mutex) on '/var/lock/\$1.lock' file"
   utils:blue "→ flock_exec $1"
-  lock_file="/var/lock/$1.lock"
+  local lock_file="/var/lock/$1.lock"
   (
     utils:orange "→ wait $lock_file"
     flock -x 9
@@ -140,7 +140,7 @@ utils:flock_exec() {
 
 utils:print_template() {
   declare help="print a bash template"
-
+  local template
   read -r -d '' template <<'EOF_TEMPLATE' || true
 #!/usr/bin/env bash
 
@@ -159,7 +159,7 @@ main() {
 }
 
 cleanup() {
-  exitcode=$?
+  local exitcode=$?
   declare help="print the stack on error exit"
   if [[ $exitcode != 0 ]]; then
     utils:stack
@@ -194,7 +194,7 @@ utils:has_param() {
   # utils:has_param "--" "$@"          # → exit code is 0
   # utils:has_param "--" -a -e         # → exit code is 1
   declare help="same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise"
-  param_names=(${1//|/ })
+  local param_names=(${1//|/ })
   shift
   declare -a utils_params_values
   while [[ $# -gt 0 ]]; do
@@ -261,7 +261,7 @@ utils:get_params() {
   declare help="print parameter value \$1 from \"\$@\", if \$1 == '--' print last parameters that doesn't start with by '-' ---- $1='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if $1='e |error '"
   IFS='|' read -ra param_names <<<"$1" # split first param by | and keep spaces
   shift
-  utils_params_values=()
+  local utils_params_values=()
   while [[ $# -gt 0 ]]; do
     if [[ "${param_names:-}" == "--" ]]; then
       if [[ $1 == "--" ]]; then
@@ -537,7 +537,7 @@ _print_line() {
 _pipe_color() {
   declare help="use the function \$1 to print each line of stdin"
   { set +x; } 2>/dev/null
-  cmd=${1}
+  local cmd=${1}
   local line
   while read -r line; do
     _print_line
@@ -549,7 +549,7 @@ _pipe_color() {
 _print_color() {
   declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   (
-    params="$*"
+    local params="$*"
     IFS=$'\n'
     lines=($params)
     if [[ ${NO_COLOR:-false} == true ]]; then
