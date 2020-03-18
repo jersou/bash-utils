@@ -614,7 +614,7 @@ _run_debug_mode_true() {
 _debug() {
   sh_source=${1##*/}
   lineno=$2
-  if [[ $sh_source != "bash-utils.sh" ]]; then
+  if [[ $sh_source != "bash-utils.sh" ]] && [[ $BASH_COMMAND != '[[ ${UTILS_DEBUG:-false} != TRACE ]] ← [UTILS_DEBUG="TRACE"]' ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
       # TODO fix avertissement : substitution de commande : octet nul ignoré en entrée
@@ -636,7 +636,6 @@ _send_debug_trace() {
 
 _get_debug_trace() {
   local param_values
-
   param_values="$(_get_param_values "$BASH_COMMAND" || true)"
   if [[ -n "$param_values" ]]; then
     param_values=" ← [${param_values%, }]"
