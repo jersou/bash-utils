@@ -636,6 +636,7 @@ _send_debug_trace() {
 
 _get_debug_trace() {
   local param_values
+
   param_values="$(_get_param_values "$BASH_COMMAND" || true)"
   if [[ -n "$param_values" ]]; then
     param_values=" ← [${param_values%, }]"
@@ -644,11 +645,13 @@ _get_debug_trace() {
   printf "#[DEBUG]%s#%-3s ${sh_source}:%-3s → %s%s\n" "$UTILS_DEBUG_CALL_LEVEL" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND" "$param_values"
 }
 _get_param_values() {
-  # TODO améliorer affichage
   (
     set +o nounset
-    while read v; do
-      echo -n "$v=\"${!v}\", "
+    local var
+    while read var; do
+      if [[ ${var} =~ ^[a-zA-Z0-9_]+$ ]]; then
+        echo -n "$var=\"${!var}\", "
+      fi
     done < <(echo "$*" | grep -oE '\$\{?[a-zA-Z0-9_]+' | sed -E 's|\$\{?([a-zA-Z0-9_]+)|\1|g' | sort -u)
     set -o nounset
   )
