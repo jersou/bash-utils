@@ -2,6 +2,11 @@
 # from https://github.com/jersou/bash-utils
 # need bash > 4.3 (2014)
 
+# TODO update doc
+# TODO refactor
+# TODO reduce color functions
+# TODO zenity print
+
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
   set -o errexit
@@ -17,11 +22,6 @@ utils:init() {
     trap utils:print_stack_on_error ERR TERM INT # at exit
   fi
   _init_debug
-}
-
-# deprecated, use : utils:run main "$@"
-utils:run_main() {
-  utils:run main "$@"
 }
 
 utils:run() {
@@ -525,6 +525,7 @@ export -f utils:pipe_white
 
 _print_line() {
   declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
+  # TODO make regex [[:blank:]]*\033
   if [[ "${line:0:1}" == $'\033' ]]; then
     printf "%s\\n" "${line}"
   else
@@ -706,6 +707,12 @@ set_trap_exit_debug() {
 _trap_exit_debug() {
   # TODO
   echo _trap_exit_debug
+}
+
+###################################################### DEPRECATED ######################################################
+# deprecated, use : utils:run main "$@"
+utils:run_main() {
+  utils:run main "$@"
 }
 
 ########################################################################################################################
