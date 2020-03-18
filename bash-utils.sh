@@ -43,7 +43,7 @@ utils:run() {
       utils:debugger
     else
       if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
-        "$@" 2> >(utils:pipe_error) # colorize stderr (default)
+        "$@" 2> >(utils:pipe_error >&2) # colorize stderr (default)
       else
         "$@"
       fi
