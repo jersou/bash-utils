@@ -614,7 +614,7 @@ _debug() {
       # TODO fix avertissement : substitution de commande : octet nul ignoré en entrée
       utils:green "$(_get_debug_trace)"
       ((utils_debug_index++))
-      sleep 0.01
+      sleep 0.001
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
