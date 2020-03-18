@@ -564,35 +564,39 @@ _print_color() {
 
 _init_debug() {
   if [[ ${UTILS_DEBUG:-false} != false ]]; then
-    set -o functrace
-    trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
-    utils_debug_index=1
+    # increment UTILS_DEBUG_CALL_LEVEL
+    UTILS_DEBUG_CALL_LEVEL=$((${UTILS_DEBUG_CALL_LEVEL:-0} + 1))
 
-    if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
-      UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
-      mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
-      utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
-      utils:log "${UTILS_DEBUG_PIPES}.out" >&2
-      utils:log "${UTILS_DEBUG_PIPES}.in" >&2
-      set_trap_exit_debug
-    fi
-    if [[ ${UTILS_DEBUG} == "TERM" ]]; then
-      # TODO other terminals ? auto detect term emu
-      if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
-        utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null >&2
-      else
+    if [[ ${UTILS_DEBUG_CALL_LEVEL} -le ${UTILS_DEBUG_CALL_LEVEL_LIMIT:-2} ]]; then
+      set -o functrace
+      trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
+      utils_debug_index=1
+
+      if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
+        UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
+        mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
+        utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
+        utils:log "${UTILS_DEBUG_PIPES}.out" >&2
+        utils:log "${UTILS_DEBUG_PIPES}.in" >&2
+        set_trap_exit_debug
+      fi
+      if [[ ${UTILS_DEBUG} == "TERM" ]]; then
+        # TODO other terminals ? auto detect term emu
+        if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
+          utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null >&2
+        else
+          utils:red "TO DEBUG, RUN :" >&2
+          echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+        fi
+      elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
         utils:red "TO DEBUG, RUN :" >&2
         echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+      elif [[ ${UTILS_DEBUG} == true ]]; then
+        utils:orange "UTILS_DEBUG=true" >&2
+        UTILS_DEBUG_CALL_LEVEL_LIMIT=1
       fi
-    elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
-      utils:red "TO DEBUG, RUN :" >&2
-      echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
-    elif [[ ${UTILS_DEBUG} == true ]]; then
-      utils:orange "UTILS_DEBUG=true" >&2
     fi
-
   fi
-
 }
 
 _run_debug_mode_true() {
