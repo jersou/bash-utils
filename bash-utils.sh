@@ -6,6 +6,7 @@
 # TODO refactor
 # TODO reduce color functions
 # TODO zenity print
+# TODO use local variables
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -537,6 +538,7 @@ _pipe_color() {
   declare help="use the function \$1 to print each line of stdin"
   { set +x; } 2>/dev/null
   cmd=${1}
+  local line
   while read -r line; do
     _print_line
   done
@@ -617,7 +619,7 @@ _debug() {
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
       # TODO fix avertissement : substitution de commande : octet nul ignoré en entrée
-      utils:green "$(_get_debug_trace)"
+      utils:pipe_green < <(_get_debug_trace)
       ((utils_debug_index++))
       sleep 0.001
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
@@ -664,6 +666,7 @@ _debug_command() {
 
 utils:debugger() {
   utils:red "utils:debugger" >&2
+  local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
     sleep 0.01
