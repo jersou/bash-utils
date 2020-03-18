@@ -636,7 +636,23 @@ _send_debug_trace() {
 }
 
 _get_debug_trace() {
-  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → %s\n" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND"
+  local param_values
+  param_values="$(_get_param_values "$BASH_COMMAND")"
+  if [[ -n "$param_values" ]]; then
+    param_values=" ← [${param_values%, }]"
+  fi
+
+  printf "#[DEBUG]#%-3s ${sh_source}:%-3s → %s%s\n" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND" "$param_values"
+}
+_get_param_values() {
+  # TODO améliorer affichage
+  (
+    set +o nounset
+    while read v; do
+      echo -n "$v=\"${!v}\", "
+    done < <(echo "$*" | grep -oE '\$\{?[a-zA-Z0-9_]+' | sed -E 's|\$\{?([a-zA-Z0-9_]+)|\1|g' | sort -u)
+    set -o nounset
+  )
 }
 
 _debug_command() {
