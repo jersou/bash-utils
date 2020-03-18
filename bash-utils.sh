@@ -525,7 +525,7 @@ export -f utils:pipe_white
 
 _print_line() {
   declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
-  # TODO make regex [[:blank:]]*\033
+  # TODO make regex : [[ "$line" =~ [[:blank:]]*$'\033' ]] or [[ "$line" =~ .*$'\033' ]] ?
   if [[ "${line:0:1}" == $'\033' ]]; then
     printf "%s\\n" "${line}"
   else
