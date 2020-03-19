@@ -6,7 +6,8 @@
 # TODO refactor
 # TODO reduce color functions
 # TODO zenity print
-# TODO use local variables
+# TODO see README TODOs
+# TODO simplify : merge print* and pipe* functions
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -527,7 +528,6 @@ export -f utils:pipe_white
 
 _print_line() {
   declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
-  # TODO make regex : [[ "$line" =~ [[:blank:]]*$'\033' ]] or [[ "$line" =~ .*$'\033' ]] ?
   if [[ "${line:0:1}" == $'\033' ]]; then
     printf "%s\\n" "${line}"
   else
@@ -617,7 +617,6 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]] && [[ $BASH_COMMAND != '[[ ${UTILS_DEBUG:-false} != TRACE ]] ← [UTILS_DEBUG="TRACE"]' ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
-      # TODO fix avertissement : substitution de commande : octet nul ignoré en entrée
       utils:pipe_green < <(_get_debug_trace)
       ((utils_debug_index++))
       sleep 0.001
@@ -666,20 +665,18 @@ _debug_command() {
 }
 
 # TODO: trap return, print exitcode and exec time ?
-# TODO : fix "avertissement : substitution de commande: octet nul ignoré en entrée" if UTILS_DEBUG=TRACE ou UTILS_DEBUG=true sur certains scripts qui en appellent d'autre qui utilisent bash-utils
-# TODO : mode debug dans le mm terminal : si stdin inutile
-# TODO :
-#  UTILS_TRY_OPEN_TERMINAL_EMU
-#  sleep between
-#  set breakpoint
-#  next
-#  next N steps
-#  print env
-#  print diff env
-#  record env (to diff)
-#  exec
-#  print menu
-#  print stack trace
+# TODO : add debug commands
+#         * UTILS_TRY_OPEN_TERMINAL_EMU
+#         * sleep between
+#         * set breakpoint
+#         * next
+#         * next N steps
+#         * print env
+#         * print diff env
+#         * record env (to diff)
+#         * exec
+#         * print menu
+#         * print stack trace
 
 utils:debugger() {
   utils:red "utils:debugger" >&2
