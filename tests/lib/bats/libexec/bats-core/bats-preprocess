@@ -51,7 +51,7 @@ tests=()
       printf '%s\n' "$line"
     fi
   done
-} <<< "$(< "$test_file")"$'\n'
+} <<< "$(sed -z 's|\n{\n| {\n\n|g' "$test_file")"$'\n'
 
 for test_name in "${tests[@]}"; do
   printf 'bats_test_function %s\n' "$test_name"
