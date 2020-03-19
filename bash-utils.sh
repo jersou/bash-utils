@@ -727,7 +727,7 @@ set_trap_exit_debug() {
   trap "$trap_exit_cmd" EXIT
 }
 _trap_exit_debug() {
-  # TODO
+  # TODO _trap_exit_debug
   echo _trap_exit_debug
 }
 

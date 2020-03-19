@@ -66,4 +66,4 @@ setup() {
   [[ $status == 0 ]] && [[ ${output//$EOL//} == "aaa/123" ]]
 }
 
-# TODO
+# TODO tests
