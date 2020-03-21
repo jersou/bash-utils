@@ -147,16 +147,8 @@ utils:print_template() {
 
 main() {
   declare help="main function"
-  echo "args=$*"
-  utils:exec echo message "$(basename "$0")"
-  utils:log log message
-  utils:debug debug message
-  utils:error error message
-  utils:warn warn message
-  utils:red red message
-  utils:green green message
-  utils:blue blue message
-  utils:exec test "$@"
+  utils:log "main function args=$*"
+  utils:exec echo message
 }
 
 cleanup() {
@@ -178,65 +170,10 @@ if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
 fi
 
 EOF_TEMPLATE
-
   echo "$template"
 }
 
 ###################################################### GET PARAMS ######################################################
-utils:has_param() {
-  # ${@} = --stln -s --err=msg1 file0 --err=msg2 -err=ERROR --err msg3 -e=msg4 -e msg5 -eat=msg6 -a msg7 -t msg8 "file 0" file1 "file 2" -- file4 -file5 --err=msg9 file6 --end
-  # utils:has_param "stln" "$@"      # → exit code is 0
-  # utils:has_param "a" "$@"         # → exit code is 0
-  # utils:has_param "z" "$@"         # → exit code is 1
-  # utils:has_param "unknown" "$@"   # → exit code is 1
-  # utils:has_param "err|e" "$@"     # → exit code is 0
-  # utils:has_param "err |e " "$@"   # → exit code is 0
-  # utils:has_param "z " "$@"        # → exit code is 1
-  # utils:has_param "--" "$@"          # → exit code is 0
-  # utils:has_param "--" -a -e         # → exit code is 1
-  declare help="same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise"
-  local param_names=(${1//|/ })
-  shift
-  declare -a utils_params_values
-  while [[ $# -gt 0 ]]; do
-    if [[ "${param_names:-}" == "--" ]]; then
-      if [[ $1 == "--" ]]; then
-        shift
-        if [[ $# -gt 0 ]]; then
-          return 0
-        else
-          return 1
-        fi
-      else
-        if [[ $1 =~ ^[^-].*$ ]]; then
-          return 0
-        fi
-        shift
-      fi
-    else
-      for param_name in "${param_names[@]}"; do
-        case $1 in
-        --)
-          return 1
-          ;;
-        --${param_name} | --${param_name}=*)
-          if [[ $1 =~ ^(--${param_name}) ]]; then
-            return 0
-          fi
-          ;;
-        --*) ;;
-        -*=*)
-          if [[ "${#param_name}" == 1 ]] && [[ $1 =~ ^(-[^=]*${param_name}[^=]*)=(.*)$ ]]; then
-            return 0
-          fi
-          ;;
-        esac
-      done
-      shift || true
-    fi
-  done
-  return 1
-}
 
 utils:get_params() {
   ## "utils:get_params" return the params $1 from $2...
@@ -327,7 +264,7 @@ utils:get_params() {
     fi
   done
   if [[ "${UTILS_GET_FIRST_PARAM:-false}" == "true" ]]; then
-    echo "${utils_params_values[0]}"
+    echo "${utils_params_values[0]:-}"
   else
     for arg in "${utils_params_values[@]}"; do
       echo "$arg"
@@ -335,8 +272,12 @@ utils:get_params() {
   fi
 }
 
+utils:has_param() {
+  [[ -n $(utils:get_param "$@") ]]
+}
+
 _append_params() {
-  if [ ${utils_params[$key]+true} ]; then
+  if [[ ${utils_params[$key]+true} ]]; then
     utils_params[$key]+=$'\n'"$value"
   else
     utils_params[$key]="$value"
@@ -350,7 +291,7 @@ _print_utils_params() {
 }
 
 _check_no_value_param_found() {
-  if [[ $no_value_param_found == true ]]; then
+  if [[ ${no_value_param_found} == true ]]; then
     utils:error "ERROR : param '$1' is placed after parameter that doesn't starts by a '-' : "
     utils:stack
     return 1
@@ -426,142 +367,85 @@ utils:hr() {
     printf '%*s\n' "${COLUMNS:-$(tput cols -T "${TERM:-dumb}")}" '' | tr ' ' -
   done
 }
-utils:log() {
-  declare help=$'print parameters in green : \e[0;32mℹ️  parameters\e[0m'
-  PREFIX_COLOR="\e[0;32mℹ️  " _print_color "${@}"
-}
-utils:pipe_log() {
-  declare help=$'print each line of stdin in green : \e[0;32mℹ️  stdin\e[0m'
-  _pipe_color utils:log
-}
-export -f utils:pipe_log
-utils:debug() {
-  declare help=$'print parameters in blue : \e[0;36m🐛  parameters\e[0m'
-  PREFIX_COLOR="\e[0;36m🐛 " _print_color "${@}"
-}
-utils:pipe_debug() {
-  declare help=$'print each line of stdin in blue : \e[0;36m🐛  stdin\e[0m'
-  _pipe_color utils:debug
-}
-export -f utils:pipe_debug
-utils:error() {
-  declare help=$'print parameters in red to stderr : \e[0;31m❌  parameters\e[0m'
-  PREFIX_COLOR="\e[0;31m❌️ " _print_color "${@}" 1>&2
-}
-utils:pipe_error() {
-  declare help=$'print each line of stdin in red to stderr : \e[0;31m❌  stdin\e[0m'
-  _pipe_color utils:error
-}
-export -f utils:pipe_error
-utils:warn() {
-  declare help=$'print parameters in orange to stderr : \e[0;33m️⚠️  parameters\e[0m'
-  PREFIX_COLOR="\e[0;33m️⚠️  " _print_color "${@}" 1>&2
-}
-utils:pipe_warn() {
-  declare help=$'print each line of stdin in orange to stderr : \e[0;33m️⚠️  stdin\e[0m'
-  _pipe_color utils:warn
-}
-export -f utils:pipe_warn
-utils:red() {
-  declare help=$'print parameters with red background : \e[1;41;39mparameters\e[0m'
-  PREFIX_COLOR="\e[1;41;39m" _print_color "${@}"
-}
-utils:green() {
-  declare help=$'print parameters with green background : \e[1;42mparameters\e[0m'
-  PREFIX_COLOR="\e[1;42m" _print_color "${@}"
-}
-utils:orange() {
-  declare help=$'print parameters with orange background : \e[1;43mparameters\e[0m'
-  PREFIX_COLOR="\e[1;43m" _print_color "${@}"
-}
-utils:blue() {
-  declare help=$'print parameters with blue background : \e[1;44mparameters\e[0m'
-  PREFIX_COLOR="\e[1;44m" _print_color "${@}"
-}
-utils:purple() {
-  declare help=$'print parameters with purple background : \e[1;45mparameters\e[0m'
-  PREFIX_COLOR="\e[1;45m" _print_color "${@}"
-}
-utils:cyan() {
-  declare help=$'print parameters with cyan background : \e[1;46mparameters\e[0m'
-  PREFIX_COLOR="\e[1;46m" _print_color "${@}"
-}
-utils:white() {
-  declare help=$'print parameters with white background : \e[1;47mparameters\e[0m'
-  PREFIX_COLOR="\e[1;47m" _print_color "${@}"
-}
-utils:pipe_red() {
-  declare help=$'print each line of stdin with red background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:red
-}
-export -f utils:pipe_red
-utils:pipe_green() {
-  declare help=$'print each line of stdin with green background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:green
-}
-export -f utils:pipe_green
-utils:pipe_orange() {
-  declare help=$'print each line of stdin with orange background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:orange
-}
-export -f utils:pipe_orange
-utils:pipe_blue() {
-  declare help=$'print each line of stdin with blue background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:blue
-}
-export -f utils:pipe_blue
-utils:pipe_purple() {
-  declare help=$'print each line of stdin with purple background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:purple
-}
-export -f utils:pipe_purple
-utils:pipe_cyan() {
-  declare help=$'print each line of stdin with cyan background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:cyan
-}
-export -f utils:pipe_cyan
-utils:pipe_white() {
-  declare help=$'print each line of stdin with white background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:white
-}
-export -f utils:pipe_white
 
-_print_line() {
-  declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
-  if [[ "${line:0:1}" == $'\033' ]]; then
-    printf "%s\\n" "${line}"
-  else
-    ${cmd} "$line"
-  fi
-}
-_pipe_color() {
-  declare help="use the function \$1 to print each line of stdin"
+utils:pipe() {
+  # TODO help
   { set +x; } 2>/dev/null
-  local cmd=${1}
   local line
   while read -r line; do
-    _print_line
+    "$@" "$line"
   done
   if [[ -n $line ]]; then
-    _print_line
+    "$@" "$line"
   fi
 }
-_print_color() {
-  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
+
+declare -A UTILS_COLORS=(
+  [fg_black]="0;30" [fg_red]="0;31" [fg_green]="0;32" [fg_orange]="0;33" [fg_blue]="0;34" [fg_magenta]="0;35"
+  [fg_cyan]="0;36" [fg_l_gray]="0;37" [fg_gray]="0;90" [fg_l_red]="0;91" [fg_l_green]="0;92" [fg_yellow]="0;93"
+  [fg_l_blue]="0;94" [fg_l_magenta]="0;95" [fg_l_cyan]="0;96" [fg_white]="0;97"
+  [bg_black]="1;40;97" [bg_red]="1;41;97" [bg_green]="1;42;97" [bg_orange]="1;43;30" [bg_blue]="1;44;97"
+  [bg_purple]="1;45;97" [bg_cyan]="1;46;97" [bg_l_gray]="1;47;30" [bg_gray]="0;100" [bg_l_red]="0;101;30"
+  [bg_l_green]="0;102;30" [bg_yellow]="0;103;30" [bg_l_blue]="0;104;30" [bg_l_magenta]="0;105"
+  [bg_l_cyan]="0;106;30" [bg_white]="0;107;30"
+)
+declare -A UTILS_ICONS=([log]="ℹ️" [debug]="🐛" [error]="❌" [warn]="⚠️")
+utils:list_colors() {
+  for color in "${!UTILS_COLORS[@]}"; do
+    printf "\e[%bm%s\e[0m%b%b" "${UTILS_COLORS[$color]}" "$color" "${UTILS_PRINTF_ENDLINE:-\\n}"
+  done
+}
+utils:color() {
+  declare help="print parameters 2... with \$UTILS_PREFIX_COLOR at the beginning with color $1, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   (
-    local params="$*"
+    local color params line lines date
+    if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
+      utils:error "ERROR : Color not found !"
+      echo -n "colors : "
+      UTILS_PRINTF_ENDLINE=" " utils:list_colors
+      echo
+      return 1
+    fi
+    color="${UTILS_COLORS[$1]}"
+    shift
+    params="$*"
     IFS=$'\n'
+    if [[ ${UTILS_COLOR_DATE:-false} == true ]]; then
+      date="$(date +%Y-%m-%d-%H.%M.%S) "
+    else
+      date=""
+    fi
     lines=($params)
     if [[ ${NO_COLOR:-false} == true ]]; then
-      for l in "${lines[@]}"; do
-        printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+      for line in "${lines[@]}"; do
+        printf "%s%s%b" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
       done
     else
-      for l in "${lines[@]}"; do
-        printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+      for line in "${lines[@]}"; do
+        if [[ "${line}" =~ $'\033' ]]; then
+          printf "%s%s%s%b" "${UTILS_PREFIX_COLOR:-}" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
+        else
+          printf "\e[%bm%s%s%s\e[0m%b" "$color" "${UTILS_PREFIX_COLOR:-}" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
+        fi
       done
     fi
   )
+}
+utils:log() {
+  declare help=$'print parameters in green : \e[0;32mℹ️  parameters\e[0m'
+  UTILS_PREFIX_COLOR="${UTILS_ICONS[log]}  " utils:color fg_green "${@}"
+}
+utils:debug() {
+  declare help=$'print parameters in blue : \e[0;36m🐛  parameters\e[0m'
+  UTILS_PREFIX_COLOR="${UTILS_ICONS[debug]} " utils:color fg_cyan "${@}"
+}
+utils:error() {
+  declare help=$'print parameters in red to stderr : \e[0;31m❌  parameters\e[0m'
+  UTILS_PREFIX_COLOR="${UTILS_ICONS[error]} " utils:color fg_red "${@}" 1>&2
+}
+utils:warn() {
+  declare help=$'print parameters in orange to stderr : \e[0;33m️⚠️  parameters\e[0m'
+  UTILS_PREFIX_COLOR="${UTILS_ICONS[warn]}  " utils:color fg_orange "${@}" 1>&2
 }
 ######################################################## DEBUG #########################################################
 
@@ -639,7 +523,6 @@ _get_debug_trace() {
   if [[ -n "$param_values" ]]; then
     param_values=" ← [${param_values%, }]"
   fi
-
   printf "#[DEBUG]%s#%-3s ${sh_source}:%-3s → %s%s\n" "$UTILS_DEBUG_CALL_LEVEL" "${utils_debug_index}" "${lineno}" "$BASH_COMMAND" "$param_values"
 }
 _get_param_values() {
@@ -718,7 +601,6 @@ set_trap_exit_debug() {
   if [[ "$trap_exit_cmd" =~ ^\'(.*)\'$ ]]; then
     trap_exit_cmd="${BASH_REMATCH[1]}"
   fi
-
   if [[ "$trap_exit_cmd" == "" ]]; then
     trap_exit_cmd="_trap_exit_debug"
   else
@@ -737,6 +619,127 @@ utils:run_main() {
   utils:run main "$@"
 }
 
+_print_line() {
+  declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
+  if [[ "${line:0:1}" == $'\033' ]]; then
+    printf "%s\\n" "${line}"
+  else
+    ${cmd} "$line"
+  fi
+}
+_pipe_color() {
+  declare help="use the function \$1 to print each line of stdin"
+  { set +x; } 2>/dev/null
+  local cmd=${1}
+  local line
+  while read -r line; do
+    _print_line
+  done
+  if [[ -n $line ]]; then
+    _print_line
+  fi
+}
+_print_color() {
+  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
+  (
+    local params="$*"
+    IFS=$'\n'
+    lines=($params)
+    if [[ ${NO_COLOR:-false} == true ]]; then
+      for l in "${lines[@]}"; do
+        printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+      done
+    else
+      for l in "${lines[@]}"; do
+        printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
+      done
+    fi
+  )
+}
+
+utils:pipe_log() {
+  declare help=$'print each line of stdin in green : \e[0;32mℹ️  stdin\e[0m'
+  utils:pipe utils:log
+}
+export -f utils:pipe_log
+utils:pipe_debug() {
+  declare help=$'print each line of stdin in blue : \e[0;36m🐛  stdin\e[0m'
+  _pipe_color utils:debug
+}
+export -f utils:pipe_debug
+utils:pipe_error() {
+  declare help=$'print each line of stdin in red to stderr : \e[0;31m❌  stdin\e[0m'
+  _pipe_color utils:error
+}
+export -f utils:pipe_error
+utils:pipe_warn() {
+  declare help=$'print each line of stdin in orange to stderr : \e[0;33m️⚠️  stdin\e[0m'
+  _pipe_color utils:warn
+}
+export -f utils:pipe_warn
+utils:red() {
+  declare help=$'print parameters with red background : \e[1;41;39mparameters\e[0m'
+  PREFIX_COLOR="\e[1;41;39m" _print_color "${@}"
+}
+utils:green() {
+  declare help=$'print parameters with green background : \e[1;42mparameters\e[0m'
+  PREFIX_COLOR="\e[1;42m" _print_color "${@}"
+}
+utils:orange() {
+  declare help=$'print parameters with orange background : \e[1;43mparameters\e[0m'
+  PREFIX_COLOR="\e[1;43m" _print_color "${@}"
+}
+utils:blue() {
+  declare help=$'print parameters with blue background : \e[1;44mparameters\e[0m'
+  PREFIX_COLOR="\e[1;44m" _print_color "${@}"
+}
+utils:purple() {
+  declare help=$'print parameters with purple background : \e[1;45mparameters\e[0m'
+  PREFIX_COLOR="\e[1;45m" _print_color "${@}"
+}
+utils:cyan() {
+  declare help=$'print parameters with cyan background : \e[1;46mparameters\e[0m'
+  PREFIX_COLOR="\e[1;46m" _print_color "${@}"
+}
+utils:white() {
+  declare help=$'print parameters with white background : \e[1;47mparameters\e[0m'
+  PREFIX_COLOR="\e[1;47m" _print_color "${@}"
+}
+utils:pipe_red() {
+  declare help=$'print each line of stdin with red background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:red
+}
+export -f utils:pipe_red
+utils:pipe_green() {
+  declare help=$'print each line of stdin with green background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:green
+}
+export -f utils:pipe_green
+utils:pipe_orange() {
+  declare help=$'print each line of stdin with orange background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:orange
+}
+export -f utils:pipe_orange
+utils:pipe_blue() {
+  declare help=$'print each line of stdin with blue background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:blue
+}
+export -f utils:pipe_blue
+utils:pipe_purple() {
+  declare help=$'print each line of stdin with purple background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:purple
+}
+export -f utils:pipe_purple
+utils:pipe_cyan() {
+  declare help=$'print each line of stdin with cyan background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:cyan
+}
+export -f utils:pipe_cyan
+utils:pipe_white() {
+  declare help=$'print each line of stdin with white background : \e[1;41;39mparameters\e[0m'
+  _pipe_color utils:white
+}
+export -f utils:pipe_white
 ########################################################################################################################
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
