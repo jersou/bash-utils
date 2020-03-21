@@ -17,10 +17,10 @@ print_summary() {
   pc=$((100 * nb_ok / (nb_ok + nb_ko + nb_skip)))
   utils:hr
   UTILS_PRINTF_ENDLINE=" "
-  utils:green " $nb_ok OK "
-  utils:orange " $nb_skip SKIP "
-  utils:red " $nb_ko KO "
-  utils:blue "   → $pc % OK    "
+  utils:color bg_green " $nb_ok OK "
+  utils:color bg_orange " $nb_skip SKIP "
+  utils:color bg_red " $nb_ko KO "
+  utils:color bg_blue "   → $pc % OK    "
   echo
   utils:hr
 }

@@ -8,6 +8,7 @@
 # TODO zenity print
 # TODO see README TODOs
 # TODO simplify : merge print* and pipe* functions
+# TODO : fix demo & example
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -27,7 +28,7 @@ utils:init() {
 }
 
 utils:run() {
-  declare help="run utils:init and run the main function or the function \$1, add color and use utils:pipe_error for stderr except if PIPE_MAIN_STDERR!=true"
+  declare help="run utils:init and run the main function or the function \$1, add color and use utils:pipe utils:error for stderr except if PIPE_MAIN_STDERR!=true"
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
     utils:run main "$@"
   elif [[ $* == *--help* ]]; then
@@ -45,7 +46,7 @@ utils:run() {
       utils:debugger
     else
       if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
-        "$@" 2> >(utils:pipe_error >&2) # colorize stderr (default)
+        "$@" 2> >(utils:pipe utils:error >&2) # colorize stderr (default)
       else
         "$@"
       fi
@@ -88,11 +89,11 @@ utils:help() {
 
 utils:stack() {
   declare help="print current stack"
-  utils:red "Stack:"
+  utils:color bg_red "Stack:"
   local frame_number=1
   while caller ${frame_number}; do
     frame_number=$((frame_number + 1))
-  done | utils:pipe_red
+  done | utils:pipe utils:color bg_red
 }
 
 utils:print_stack_on_error() {
@@ -100,14 +101,14 @@ utils:print_stack_on_error() {
   declare help="print stack on error exit"
   if [[ ${exitcode} != 0 ]]; then
     utils:stack
-    utils:orange "exit code = $exitcode"
+    utils:color bg_orange "exit code = $exitcode"
     exit ${exitcode}
   fi >&2
 }
 
 utils:countdown() {
   for pc in $(seq "$1" -1 1); do
-    UTILS_PRINTF_ENDLINE="            \\r" utils:blue "sleep $pc sec"
+    UTILS_PRINTF_ENDLINE="            \\r" utils:color bg_blue "sleep $pc sec"
     sleep 1
   done
   utils:debug "→ countdown $1 end            "
@@ -116,24 +117,24 @@ utils:countdown() {
 utils:exec() {
   declare help="print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true"
   if [[ ${UTILS_PRINT_TIME:-false} == true ]]; then
-    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
+    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     time "$@"
     sleep 0.1
-    utils:blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
+    utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
   else
-    utils:blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
+    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     "$@"
   fi
 }
 
 utils:flock_exec() {
   declare help="run <\$2 ...> command with flock (mutex) on '/var/lock/\$1.lock' file"
-  utils:blue "→ flock_exec $1"
+  utils:color bg_blue "→ flock_exec $1"
   local lock_file="/var/lock/$1.lock"
   (
-    utils:orange "→ wait $lock_file"
+    utils:color bg_orange "→ wait $lock_file"
     flock -x 9
-    utils:green "→ got $lock_file"
+    utils:color bg_green "→ got $lock_file"
     shift
     "$@"
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
@@ -156,7 +157,7 @@ cleanup() {
   declare help="print the stack on error exit"
   if [[ $exitcode != 0 ]]; then
     utils:stack
-    utils:orange "exit code = $exitcode"
+    utils:color bg_orange "exit code = $exitcode"
     return $exitcode
   fi
 }
@@ -461,7 +462,7 @@ _init_debug() {
       if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
         UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
         mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
-        utils:orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
+        utils:color bg_orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
         utils:log "${UTILS_DEBUG_PIPES}.out" >&2
         utils:log "${UTILS_DEBUG_PIPES}.in" >&2
         set_trap_exit_debug
@@ -471,14 +472,14 @@ _init_debug() {
         if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
           utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null >&2
         else
-          utils:red "TO DEBUG, RUN :" >&2
+          utils:color bg_red "TO DEBUG, RUN :" >&2
           echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
         fi
       elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
-        utils:red "TO DEBUG, RUN :" >&2
+        utils:color bg_red "TO DEBUG, RUN :" >&2
         echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
       elif [[ ${UTILS_DEBUG} == true ]]; then
-        utils:orange "UTILS_DEBUG=true" >&2
+        utils:color bg_orange "UTILS_DEBUG=true" >&2
         UTILS_DEBUG_CALL_LEVEL_LIMIT=1
       fi
     fi
@@ -488,7 +489,7 @@ _init_debug() {
 _run_debug_mode_true() {
   if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
     # colorize stderr (default)
-    "$@" </dev/null 2> >(utils:pipe_error 2>&1 | tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
+    "$@" </dev/null 2> >(utils:pipe utils:error 2>&1 | tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
   else
     "$@" </dev/null 2> >(tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
   fi
@@ -501,7 +502,7 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]] && [[ $BASH_COMMAND != '[[ ${UTILS_DEBUG:-false} != TRACE ]] ← [UTILS_DEBUG="TRACE"]' ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
-      utils:pipe_green < <(_get_debug_trace)
+      utils:pipe utils:green < <(_get_debug_trace)
       ((utils_debug_index++))
       sleep 0.001
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
@@ -562,14 +563,14 @@ _debug_command() {
 #         * print stack trace
 
 utils:debugger() {
-  utils:red "utils:debugger" >&2
+  utils:color bg_red "utils:debugger" >&2
   local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
     sleep 0.01
-    utils:green "$line" >&2
+    utils:color bg_green "$line" >&2
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
-      utils:red "→ press any key to exit" >&2
+      utils:color bg_red "→ press any key to exit" >&2
       read -s -r -n 1 cmd
       if [[ ${UTILS_DEBUG} != true ]]; then
         echo continue >"${UTILS_DEBUG_PIPES}.in"
@@ -578,7 +579,7 @@ utils:debugger() {
       exit 0
     fi
     # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
-    utils:blue "→ press any key to continue" >&2
+    utils:color bg_blue "→ press any key to continue" >&2
     read -s -r -n 1 cmd
     echo continue >"${UTILS_DEBUG_PIPES}.in"
   done
@@ -612,135 +613,6 @@ _trap_exit_debug() {
   # TODO _trap_exit_debug
   echo _trap_exit_debug
 }
-
-###################################################### DEPRECATED ######################################################
-# deprecated, use : utils:run main "$@"
-utils:run_main() {
-  utils:run main "$@"
-}
-
-_print_line() {
-  declare help="print the \$line variable with the \$cmd function, use printf if tne line starts with color sequence"
-  if [[ "${line:0:1}" == $'\033' ]]; then
-    printf "%s\\n" "${line}"
-  else
-    ${cmd} "$line"
-  fi
-}
-_pipe_color() {
-  declare help="use the function \$1 to print each line of stdin"
-  { set +x; } 2>/dev/null
-  local cmd=${1}
-  local line
-  while read -r line; do
-    _print_line
-  done
-  if [[ -n $line ]]; then
-    _print_line
-  fi
-}
-_print_color() {
-  declare help="print parameters with \$PREFIX_COLOR at the beginning, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
-  (
-    local params="$*"
-    IFS=$'\n'
-    lines=($params)
-    if [[ ${NO_COLOR:-false} == true ]]; then
-      for l in "${lines[@]}"; do
-        printf "%s%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-      done
-    else
-      for l in "${lines[@]}"; do
-        printf "${PREFIX_COLOR}%s\e[0m%b" "$l" "${UTILS_PRINTF_ENDLINE:-\\n}"
-      done
-    fi
-  )
-}
-
-utils:pipe_log() {
-  declare help=$'print each line of stdin in green : \e[0;32mℹ️  stdin\e[0m'
-  utils:pipe utils:log
-}
-export -f utils:pipe_log
-utils:pipe_debug() {
-  declare help=$'print each line of stdin in blue : \e[0;36m🐛  stdin\e[0m'
-  _pipe_color utils:debug
-}
-export -f utils:pipe_debug
-utils:pipe_error() {
-  declare help=$'print each line of stdin in red to stderr : \e[0;31m❌  stdin\e[0m'
-  _pipe_color utils:error
-}
-export -f utils:pipe_error
-utils:pipe_warn() {
-  declare help=$'print each line of stdin in orange to stderr : \e[0;33m️⚠️  stdin\e[0m'
-  _pipe_color utils:warn
-}
-export -f utils:pipe_warn
-utils:red() {
-  declare help=$'print parameters with red background : \e[1;41;39mparameters\e[0m'
-  PREFIX_COLOR="\e[1;41;39m" _print_color "${@}"
-}
-utils:green() {
-  declare help=$'print parameters with green background : \e[1;42mparameters\e[0m'
-  PREFIX_COLOR="\e[1;42m" _print_color "${@}"
-}
-utils:orange() {
-  declare help=$'print parameters with orange background : \e[1;43mparameters\e[0m'
-  PREFIX_COLOR="\e[1;43m" _print_color "${@}"
-}
-utils:blue() {
-  declare help=$'print parameters with blue background : \e[1;44mparameters\e[0m'
-  PREFIX_COLOR="\e[1;44m" _print_color "${@}"
-}
-utils:purple() {
-  declare help=$'print parameters with purple background : \e[1;45mparameters\e[0m'
-  PREFIX_COLOR="\e[1;45m" _print_color "${@}"
-}
-utils:cyan() {
-  declare help=$'print parameters with cyan background : \e[1;46mparameters\e[0m'
-  PREFIX_COLOR="\e[1;46m" _print_color "${@}"
-}
-utils:white() {
-  declare help=$'print parameters with white background : \e[1;47mparameters\e[0m'
-  PREFIX_COLOR="\e[1;47m" _print_color "${@}"
-}
-utils:pipe_red() {
-  declare help=$'print each line of stdin with red background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:red
-}
-export -f utils:pipe_red
-utils:pipe_green() {
-  declare help=$'print each line of stdin with green background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:green
-}
-export -f utils:pipe_green
-utils:pipe_orange() {
-  declare help=$'print each line of stdin with orange background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:orange
-}
-export -f utils:pipe_orange
-utils:pipe_blue() {
-  declare help=$'print each line of stdin with blue background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:blue
-}
-export -f utils:pipe_blue
-utils:pipe_purple() {
-  declare help=$'print each line of stdin with purple background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:purple
-}
-export -f utils:pipe_purple
-utils:pipe_cyan() {
-  declare help=$'print each line of stdin with cyan background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:cyan
-}
-export -f utils:pipe_cyan
-utils:pipe_white() {
-  declare help=$'print each line of stdin with white background : \e[1;41;39mparameters\e[0m'
-  _pipe_color utils:white
-}
-export -f utils:pipe_white
-########################################################################################################################
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   IGNORE_UTILS_FUNCTIONS=false

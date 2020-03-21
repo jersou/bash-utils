@@ -10,9 +10,9 @@ main() {
   utils:debug "debug message"
   utils:error "error message"
   utils:warn "warn message"
-  utils:red "red message"
-  utils:green "green message"
-  utils:blue "blue message"
+  utils:color bg_red "red message"
+  utils:color bg_green "green message"
+  utils:color bg_blue "blue message"
 }
 
 test_params() {
@@ -22,7 +22,7 @@ test_params() {
   echo "key=$(utils:get_params "key" "$@")"
   utils:hr
   utils:parse_parameters "$@"
-  utils:blue "utils_params="
+  utils:color bg_blue "utils_params="
   # shellcheck disable=SC2154
   for key in "${!utils_params[@]}"; do
     echo "    utils_params[$key]=${utils_params[$key]}"

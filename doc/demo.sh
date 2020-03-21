@@ -22,10 +22,10 @@ cd ".." || exit 1
 
 NO_COLOR=true ./bash-utils.sh --help |
   grep -o -E " - utils:[a-zA-Z0-9_]+" |
-  grep -vE "utils:help|utils:list_functions|utils:pipe_|utils:run|utils:hr|utils:msg|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param" |
+  grep -vE "utils:help|utils:list_functions|utils:run|utils:hr|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param" |
   cut -d'-' -f2 |
   while read -r l; do
-    ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe_purple
+    ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe utils:color bg_purple
     echo "↓ ./bash-utils.sh $l msg"
     ./bash-utils.sh "$l" msg
     echo

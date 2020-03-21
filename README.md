@@ -16,44 +16,25 @@ Ensuite, les fonctions `utils:*` sont disponibles, par exemple : `utils:log log 
 et :
 
 Functions ('main' by default) :
-  - utils:blue : print parameters with blue background : parameters
   - utils:countdown
-  - utils:cyan : print parameters with cyan background : parameters
   - utils:debug : print parameters in blue : 🐛  parameters
   - utils:error : print parameters in red to stderr : ❌  parameters
   - utils:exec : print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true
   - utils:flock_exec : run <$2 ...> command with flock (mutex) on '/var/lock/$1.lock' file
   - utils:get_param : same as 'utils:get_params' but return the first result only
   - utils:get_params : print parameter value $1 from "$@", if $1 == '--' print last parameters that doesn't start with by '-' ---- ='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if ='e |error '
-  - utils:green : print parameters with green background : parameters
   - utils:has_param : same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise
   - utils:help : print the help of all functions (the declare help='...')
   - utils:hr : print N horizontal line, N=1 by default, N is the first parameter
   - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true
   - utils:list_functions : utils_params_values all functions of the parent script
   - utils:log : print parameters in green : ℹ️  parameters
-  - utils:orange : print parameters with orange background : parameters
   - utils:parse_parameters : set utils_params array from "$@" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)
-  - utils:pipe_blue : print each line of stdin with blue background : parameters
-  - utils:pipe_cyan : print each line of stdin with cyan background : parameters
-  - utils:pipe_debug : print each line of stdin in blue : 🐛  stdin
-  - utils:pipe_error : print each line of stdin in red to stderr : ❌  stdin
-  - utils:pipe_green : print each line of stdin with green background : parameters
-  - utils:pipe_log : print each line of stdin in green : ℹ️  stdin
-  - utils:pipe_orange : print each line of stdin with orange background : parameters
-  - utils:pipe_purple : print each line of stdin with purple background : parameters
-  - utils:pipe_red : print each line of stdin with red background : parameters
-  - utils:pipe_warn : print each line of stdin in orange to stderr : ️⚠️  stdin
-  - utils:pipe_white : print each line of stdin with white background : parameters
   - utils:print_stack_on_error : print stack on error exit
   - utils:print_template : print the stack on error exit
-  - utils:purple : print parameters with purple background : parameters
-  - utils:red : print parameters with red background : parameters
-  - utils:run : run utils:init and run the main function or the function $1, add color and use utils:pipe_error for stderr except if PIPE_MAIN_STDERR!=true
-  - utils:run_main : run utils:init and run the main function, add color and use utils:pipe_error for stderr except if PIPE_MAIN_STDERR!=true
+  - utils:run : run utils:init and run the main function or the function $1, add color and use utils:pipe utils:error for stderr except if PIPE_MAIN_STDERR!=true
   - utils:stack : print current stack
   - utils:warn : print parameters in orange to stderr : ️⚠️  parameters
-  - utils:white : print parameters with white background : parameters
 
 ## Les variables d'environnement
 
@@ -631,7 +612,6 @@ lock_file=/var/lock/my_script.lock
 un script où on voudrait enlever la dépendance :
   * remplacer les `log`/`warn`/... par des echo
   * supprimer les `utils:exec`
-  * remplacer les `utils:run_main` par `main`
 * ajout de "local" dans les bonnes pratiques
 * traiter les TODO du code
 
