@@ -21,14 +21,14 @@ test_params() {
   echo "unk=$(utils:get_params "unk" "$@")"
   echo "key=$(utils:get_params "key" "$@")"
   utils:hr
-  utils:parse_parameters "$@"
+  utils:parse_params "$@"
   utils:color bg_blue "utils_params="
   # shellcheck disable=SC2154
   for key in "${!utils_params[@]}"; do
     echo "    utils_params[$key]=${utils_params[$key]}"
   done
-  [[ "${utils_params[key]}" != "value" ]] # ← utils_params[] need this call before : utils:parse_parameters "$@"
-  # or : [[ "$(utils:get_params "key" "$@")" != "value" ]] # ← don't need "utils:parse_parameters" call
+  [[ "${utils_params[key]}" != "value" ]] # ← utils_params[] need this call before : utils:parse_params "$@"
+  # or : [[ "$(utils:get_params "key" "$@")" != "value" ]] # ← don't need "utils:parse_params" call
 }
 
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # not being sourced

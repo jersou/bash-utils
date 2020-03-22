@@ -29,8 +29,7 @@ Functions ('main' by default) :
   - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true
   - utils:list_functions : utils_params_values all functions of the parent script
   - utils:log : print parameters in green : ℹ️  parameters
-  - utils:parse_parameters : set utils_params array from "$@" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)
-  - utils:print_template : print the stack on error exit
+  - utils:parse_params : set utils_params array from "$@" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)
   - utils:run : run utils:init and run the main function or the function $1, add color and use utils:pipe utils:error for stderr except if UTILS_PIPE_MAIN_STDERR!=true
   - utils:stack : print current stack
   - utils:warn : print parameters in orange to stderr : ️⚠️  parameters

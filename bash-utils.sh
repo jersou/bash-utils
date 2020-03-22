@@ -5,6 +5,7 @@
 # TODO update doc
 # TODO zenity debug print
 # TODO see sh and README TODOs
+# TODO add UTILS_LOG_LEVEL to hide debug/info/warn/error msg if the level is too high
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -19,6 +20,7 @@ utils:init() {
   if [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} == true ]]; then
     trap _utils_print_stack_and_exit_code ERR TERM INT # at exit
   fi
+  UTILS_ORIGIN_PWD="$(pwd)"
   _init_debug
 }
 
@@ -55,16 +57,21 @@ utils:run() {
 
 utils:list_functions() {
   declare help="list all functions of the parent script, set UTILS_HIDE_PRIVATE_FUNCTIONS!= true to list _* functions"
-  if [[ ${UTILS_IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
-    bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
-  else
-    bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
-  fi |
-    if [[ "${UTILS_HIDE_PRIVATE_FUNCTIONS:-true}" == "true" ]]; then
-      grep -v '^_'
-    else
-      cat
+  (
+    if [[ -n ${UTILS_ORIGIN_PWD} ]]; then
+      cd "$UTILS_ORIGIN_PWD"
     fi
+    if [[ ${UTILS_IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
+      bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
+    else
+      bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
+    fi |
+      if [[ "${UTILS_HIDE_PRIVATE_FUNCTIONS:-true}" == "true" ]]; then
+        grep -v '^_'
+      else
+        cat
+      fi
+  )
 }
 
 utils:help() {
@@ -107,64 +114,45 @@ utils:countdown() {
   utils:debug "→ countdown $1 end            "
 }
 
+_add_quote_to_params() {
+  local params=""
+  for param in "$@"; do
+    if [[ $param =~ [[:space:]] ]]; then
+      params="$params \"$param\""
+    else
+      params="$params $param"
+    fi
+  done
+  echo "$params"
+}
+
 utils:exec() {
   declare help="print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true"
-  if [[ ${UTILS_PRINT_TIME:-false} == true ]]; then
-    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
+  if [[ ${UTILS_PRINT_TIME:-START} == true ]]; then
+    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
     time "$@"
     sleep 0.00001 # sync stdin & stderr ...
-    utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
+    utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← " $(_add_quote_to_params "$@")
+  elif [[ ${UTILS_PRINT_TIME:-START} == START ]]; then
+    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
+    "$@"
   else
-    utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
+    utils:color bg_blue "→ $*"
     "$@"
   fi
 }
 
 utils:flock_exec() {
   declare help="run <\$2 ...> command with flock (mutex) on '/var/lock/\$1.lock' file"
-  UTILS_PRINTF_ENDLINE=" " utils:color bg_blue "→ flock_exec $1"
+  utils:color bg_blue "→ flock_exec $1"
   local lock_file="/var/lock/$1.lock"
   (
-    UTILS_PRINTF_ENDLINE=" " utils:color bg_orange "→ wait $lock_file"
+    utils:color bg_orange "→ wait $lock_file"
     flock -x 9
     utils:color bg_green "→ got $lock_file"
     shift
     "$@"
   ) 9>"$lock_file" # fd > 9 doesn't work with zsh
-}
-
-utils:print_template() {
-  declare help="print a bash template"
-  local template
-  read -r -d '' template <<'EOF_TEMPLATE' || true
-#!/usr/bin/env bash
-
-main() {
-  declare help="main function" # optional help
-  utils:log "main function args=$*" # example
-  utils:exec echo message # example
-}
-
-cleanup() { # optional
-  local exitcode=$?
-  declare help="print the stack on error exit"
-  if [[ $exitcode != 0 ]]; then
-    utils:stack # example
-    utils:color bg_orange "exit code = $exitcode" # example
-    return $exitcode
-  fi
-}
-
-if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
-  GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
-  # shellcheck source=./bash-utils.sh
-  source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️  utils:* functions
-  trap cleanup EXIT ERR TERM INT # at exit # optional
-  utils:run "$@"
-fi
-
-EOF_TEMPLATE
-  echo "$template"
 }
 
 _utils_print_stack_and_exit_code() {
@@ -258,7 +246,7 @@ utils:get_params() {
           ;;
         --${param_name})
           if [[ ${permit_space_key_value_separator} == true ]]; then
-            utils_params_values+=("${2}")
+            utils_params_values+=("${2:-}")
             shift
           else
             utils_params_values+=(true)
@@ -304,7 +292,7 @@ utils:has_param() {
   [[ -n $(utils:get_param "$@") ]]
 }
 
-utils:parse_parameters() {
+utils:parse_params() {
   declare help="set utils_params array from \"\$@\" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)"
   # for key in "${!utils_params[@]}"; do echo "utils_params[$key]=${utils_params[$key]}"; done
   unset utils_params
@@ -432,6 +420,10 @@ utils:log() {
   declare help=$'print parameters in green : \e[0;32mℹ️  parameters\e[0m'
   UTILS_PREFIX_COLOR="${UTILS_ICONS[log]}  " utils:color fg_green "${@}"
 }
+utils:info() {
+  declare help=$'print parameters in green : \e[0;32mℹ️  parameters\e[0m'
+  UTILS_PREFIX_COLOR="${UTILS_ICONS[log]}  " utils:color fg_green "${@}"
+}
 utils:debug() {
   declare help=$'print parameters in blue : \e[0;36m🐛  parameters\e[0m'
   UTILS_PREFIX_COLOR="${UTILS_ICONS[debug]} " utils:color fg_cyan "${@}"
@@ -461,7 +453,7 @@ _init_debug() {
         utils:color bg_orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
         utils:log "${UTILS_DEBUG_PIPES}.out" >&2
         utils:log "${UTILS_DEBUG_PIPES}.in" >&2
-        set_trap_exit_debug
+        _set_trap_exit_debug
       fi
       if [[ ${UTILS_DEBUG} == "TERM" ]]; then
         # TODO other terminals ? auto detect term emu
@@ -591,7 +583,7 @@ _cleanup_debug() {
   fi
 }
 
-set_trap_exit_debug() {
+_set_trap_exit_debug() {
   trap_exit_cmd=$(trap -p EXIT)
   trap_exit_cmd="${trap_exit_cmd% EXIT}"
   trap_exit_cmd="${trap_exit_cmd#trap -- }"

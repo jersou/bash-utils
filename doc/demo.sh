@@ -22,7 +22,7 @@ cd ".." || exit 1
 
 UTILS_NO_COLOR=true ./bash-utils.sh --help |
   grep -o -E " - utils:[a-zA-Z0-9_]+" |
-  grep -vE "utils:help|utils:list_functions|utils:run|utils:hr|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param|utils:debugger|utils:pipe" |
+  grep -vE "utils:help|utils:list_functions|utils:run|utils:hr|utils:exec|utils:countdown|utils:parse_params|utils:get_params|utils:get_param|utils:has_param|utils:debugger|utils:pipe" |
   cut -d'-' -f2 |
   while read -r l; do
     ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe utils:color bg_purple
@@ -65,8 +65,24 @@ sleep 0.2
 
 echo "↓ UTILS_TRACE=true ./example.sh"
 UTILS_TRACE=true ./example.sh
-echo
-sleep 0.2
+sleep 0.01
+./bash-utils.sh utils:hr
 echo "↓ UTILS_DEBUG=TRACE ./example.sh"
 UTILS_DEBUG=TRACE ./example.sh
+./bash-utils.sh utils:hr
+
+echo "↓ ./demo--colors.sh"
+./demo--colors.sh
+./bash-utils.sh utils:hr
+
+echo "↓ ./demo--get_params.sh"
+./demo--get_params.sh
+./bash-utils.sh utils:hr
+
+echo "↓ ./demo--parse_params.sh"
+./demo--parse_params.sh
+./bash-utils.sh utils:hr
+
+echo "↓ ./demo--misc.sh"
+./demo--misc.sh
 echo
