@@ -11,7 +11,7 @@
 # TODO : fix demo & example
 
 utils:init() {
-  declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap utils:print_stack_on_error if UTILS_PRINT_STACK_ON_ERROR==true"
+  declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true"
   set -o errexit
   set -o nounset
   set -o pipefail
@@ -21,7 +21,7 @@ utils:init() {
     set -o xtrace
   fi
   if [[ ${UTILS_PRINT_STACK_ON_ERROR:-false} == true ]]; then
-    trap utils:print_stack_on_error ERR TERM INT # at exit
+    trap _utils_print_stack_and_exit_code ERR TERM INT # at exit
   fi
   _init_debug
 }
@@ -95,16 +95,6 @@ utils:stack() {
   done | utils:pipe utils:color bg_red
 }
 
-utils:print_stack_on_error() {
-  local exitcode=$?
-  declare help="print stack on error exit"
-  if [[ ${exitcode} != 0 ]]; then
-    utils:stack
-    utils:color bg_orange "exit code = $exitcode"
-    exit ${exitcode}
-  fi >&2
-}
-
 utils:countdown() {
   for pc in $(seq "$1" -1 1); do
     UTILS_PRINTF_ENDLINE="            \\r" utils:color bg_blue "sleep $pc sec"
@@ -171,6 +161,15 @@ fi
 
 EOF_TEMPLATE
   echo "$template"
+}
+
+_utils_print_stack_and_exit_code() {
+  local exitcode=$?
+  if [[ ${exitcode} != 0 ]]; then
+    utils:stack
+    utils:color bg_orange "exit code = $exitcode"
+    exit ${exitcode}
+  fi >&2
 }
 
 ###################################################### GET PARAMS ######################################################
@@ -613,6 +612,7 @@ _trap_exit_debug() {
   echo _trap_exit_debug
 }
 
+########################################################################################################################
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   IGNORE_UTILS_FUNCTIONS=false
   main() {
