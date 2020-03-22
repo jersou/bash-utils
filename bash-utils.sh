@@ -112,7 +112,7 @@ utils:exec() {
   if [[ ${UTILS_PRINT_TIME:-false} == true ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     time "$@"
-    sleep 0.001 # sync stdin & stderr ...
+    sleep 0.00001 # sync stdin & stderr ...
     utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
   else
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
@@ -397,7 +397,7 @@ utils:color() {
     local color params line lines date
     if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
       utils:error "ERROR : Color not found !"
-      sleep 0.001 # sync stdin & stderr ...
+      sleep 0.00001 # sync stdin & stderr ...
       echo -n "colors : "
       UTILS_PRINTF_ENDLINE=" " utils:list_colors
       echo
@@ -500,7 +500,7 @@ _debug() {
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
       utils:pipe utils:color bg_green < <(_get_debug_trace)
       ((utils_debug_index++))
-      sleep 0.001 # sync stdin & stderr ...
+      sleep 0.00001 # sync stdin & stderr ...
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
@@ -563,7 +563,7 @@ utils:debugger() {
   local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
-    sleep 0.001 # sync stdin & stderr ...
+    sleep 0.00001 # sync stdin & stderr ...
     utils:color bg_green "$line" >&2
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
       utils:color bg_red "→ press any key to exit" >&2

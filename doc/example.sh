@@ -13,10 +13,10 @@ main() {
   utils:color bg_red "red message"
   utils:color bg_green "green message"
   utils:color bg_blue "blue message"
+  utils:color fg_blue "blue message"
 }
 
 test_params() {
-  # shellcheck disable=SC2034
   declare help="exit success if no arg --key=value"
   echo "unk=$(utils:get_params "unk" "$@")"
   echo "key=$(utils:get_params "key" "$@")"
