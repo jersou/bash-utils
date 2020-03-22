@@ -73,12 +73,15 @@ utils:help() {
   local sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
   echo "Functions ('main' by default) : "
+  set +o nounset
   for func in $(utils:list_functions); do
     help=""
     eval "$(type "${func}" | grep 'declare [h]elp=')"
     [[ -z ${help} ]] || help=" : $help"
     echo "  - ${func}${help}"
   done
+  set -o nounset
+  echo
   echo "Use this environment variable to activate some features :"
   echo "  - UTILS_DEBUG=TRACE to print each line (with line number) before execution"
   echo "  - UTILS_DEBUG=true same as UTILS_DEBUG=TRACE but wait for a key to be pressed (UTILS_DEBUG=TERM to open a new terminal)"
@@ -137,17 +140,17 @@ utils:print_template() {
 #!/usr/bin/env bash
 
 main() {
-  declare help="main function"
-  utils:log "main function args=$*"
-  utils:exec echo message
+  declare help="main function" # optional help
+  utils:log "main function args=$*" # example
+  utils:exec echo message # example
 }
 
-cleanup() {
+cleanup() { # optional
   local exitcode=$?
   declare help="print the stack on error exit"
   if [[ $exitcode != 0 ]]; then
-    utils:stack
-    utils:color bg_orange "exit code = $exitcode"
+    utils:stack # example
+    utils:color bg_orange "exit code = $exitcode" # example
     return $exitcode
   fi
 }
@@ -156,7 +159,7 @@ if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh
   source "$GIT_TOPLEVEL/bash-utils.sh" # ←⚠️  utils:* functions
-  trap cleanup EXIT ERR # at exit
+  trap cleanup EXIT ERR TERM INT # at exit # optional
   utils:run "$@"
 fi
 
@@ -389,7 +392,7 @@ utils:list_colors() {
   done
 }
 utils:color() {
-  declare help="print parameters 2... with \$UTILS_PREFIX_COLOR at the beginning with color $1, except if UTILS_NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
+  declare help="print parameters 2... with \$UTILS_PREFIX_COLOR at the beginning with color \$1, except if UTILS_NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   (
     local color params line lines date
     if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
@@ -606,12 +609,12 @@ _trap_exit_debug() {
   # TODO _trap_exit_debug
   echo TODO _trap_exit_debug
 }
-
 ########################################################################################################################
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   UTILS_IGNORE_UTILS_FUNCTIONS=false
-  main() {
+  if [[ $# == 0 ]]; then
     utils:help
-  }
-  utils:run "$@"
+  else
+    utils:run "$@"
+  fi
 fi
