@@ -16,8 +16,7 @@ utils:init() {
   set -o nounset
   set -o pipefail
   set -o errtrace
-  # workaround to hide "shopt: inherit_errexit: invalid shell option name" bash < v4.4
-  shopt -s inherit_errexit 2>/dev/null || true
+  shopt -s inherit_errexit 2>/dev/null || true # workaround to hide "shopt: inherit_errexit: invalid shell option name" bash < v4.4
   if [[ ${TRACE:-false} == true ]]; then
     set -o xtrace
   fi
@@ -31,7 +30,7 @@ utils:run() {
   declare help="run utils:init and run the main function or the function \$1, add color and use utils:pipe utils:error for stderr except if PIPE_MAIN_STDERR!=true"
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
     utils:run main "$@"
-  elif [[ $* == *--help* ]]; then
+  elif [[ $* == --help ]]; then
     utils:help
   elif utils:list_functions | grep -q "^$1\$"; then # run the function $1
     if [[ ${1:-} == "utils:debugger" ]]; then
@@ -59,13 +58,13 @@ utils:run() {
 }
 
 utils:list_functions() {
-  declare help="utils_params_values all functions of the parent script, set UTILS_FILTER_PRIVATE_FUNCTIONS!= true to list _* functions"
+  declare help="list all functions of the parent script, set UTILS_HIDE_PRIVATE_FUNCTIONS!= true to list _* functions"
   if [[ ${IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
   else
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
   fi |
-    if [[ "${UTILS_FILTER_PRIVATE_FUNCTIONS:-true}" == "true" ]]; then
+    if [[ "${UTILS_HIDE_PRIVATE_FUNCTIONS:-true}" == "true" ]]; then
       grep -v '^_'
     else
       cat
