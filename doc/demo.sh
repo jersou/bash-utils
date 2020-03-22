@@ -14,15 +14,15 @@ echo '↓ UTILS_PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --ke
 UTILS_PRINT_STACK_ON_ERROR=true ./example.sh test_params --par=v1 --key=value --par="v 1.1" f1 f2
 echo
 
-echo '↓ NO_COLOR=true ./example.sh main arg1 arg2'
-NO_COLOR=true ./example.sh main arg1 arg2
+echo '↓ UTILS_NO_COLOR=true ./example.sh main arg1 arg2'
+UTILS_NO_COLOR=true ./example.sh main arg1 arg2
 echo
 
 cd ".." || exit 1
 
-NO_COLOR=true ./bash-utils.sh --help |
+UTILS_NO_COLOR=true ./bash-utils.sh --help |
   grep -o -E " - utils:[a-zA-Z0-9_]+" |
-  grep -vE "utils:help|utils:list_functions|utils:run|utils:hr|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param" |
+  grep -vE "utils:help|utils:list_functions|utils:run|utils:hr|utils:exec|utils:countdown|utils:parse_parameters|utils:get_params|utils:get_param|utils:has_param|utils:debugger|utils:pipe" |
   cut -d'-' -f2 |
   while read -r l; do
     ./bash-utils.sh utils:hr 2 | ./bash-utils.sh utils:pipe utils:color bg_purple
@@ -46,26 +46,27 @@ for param in "${params[@]}"; do
 done
 
 echo
-echo ↓ ./bash-utils.sh utils:has_param '"--"' -a -e
-./bash-utils.sh utils:has_param "--" -a -e
+echo "↓ ./bash-utils.sh utils:has_param '--' -a -e"
+./bash-utils.sh utils:has_param '--' -a -e
 echo "→ exit code is $?"
-echo ↓ ./bash-utils.sh utils:get_params '"--"' -a -e
-./bash-utils.sh utils:get_params "--" -a -e
+echo "↓ ./bash-utils.sh utils:get_params '--' -a -e"
+./bash-utils.sh utils:get_params '--' -a -e
 echo
 echo
 
-echo ↓ ./bash-utils.sh utils:countdown 3
+echo "↓ ./bash-utils.sh utils:countdown 3"
 ./bash-utils.sh utils:countdown 3
 
 cd "doc" || exit 1
-echo ↓ UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
+echo "↓ UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh"
 UTILS_PRINT_STACK_ON_ERROR=true TRACE=true ./example.sh
 echo
+sleep 0.2
 
-echo ↓ UTILS_TRACE=true ./example.sh
+echo "↓ UTILS_TRACE=true ./example.sh"
 UTILS_TRACE=true ./example.sh
 echo
-
-echo ↓ UTILS_DEBUG=TRACE ./example.sh
+sleep 0.2
+echo "↓ UTILS_DEBUG=TRACE ./example.sh"
 UTILS_DEBUG=TRACE ./example.sh
 echo

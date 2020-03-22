@@ -3,12 +3,8 @@
 # need bash > 4.3 (2014)
 
 # TODO update doc
-# TODO refactor
-# TODO reduce color functions
-# TODO zenity print
-# TODO see README TODOs
-# TODO simplify : merge print* and pipe* functions
-# TODO : fix demo & example
+# TODO zenity debug print
+# TODO see sh and README TODOs
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -27,7 +23,7 @@ utils:init() {
 }
 
 utils:run() {
-  declare help="run utils:init and run the main function or the function \$1, add color and use utils:pipe utils:error for stderr except if PIPE_MAIN_STDERR!=true"
+  declare help="run utils:init and run the main function or the function \$1, add color and use utils:pipe utils:error for stderr except if UTILS_PIPE_MAIN_STDERR!=true"
   if [[ $# == 0 ]]; then # if the script has no argument, run the main() function
     utils:run main "$@"
   elif [[ $* == --help ]]; then
@@ -44,7 +40,7 @@ utils:run() {
       _run_debug_mode_true "$@" &
       utils:debugger
     else
-      if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+      if [[ ${UTILS_PIPE_MAIN_STDERR:-true} == true ]]; then
         "$@" 2> >(utils:pipe utils:error >&2) # colorize stderr (default)
       else
         "$@"
@@ -59,7 +55,7 @@ utils:run() {
 
 utils:list_functions() {
   declare help="list all functions of the parent script, set UTILS_HIDE_PRIVATE_FUNCTIONS!= true to list _* functions"
-  if [[ ${IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
+  if [[ ${UTILS_IGNORE_UTILS_FUNCTIONS:-true} == true ]]; then
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3 | grep -v "^utils:"
   else
     bash -c ". ${BASH_SOURCE[-1]} ; typeset -F" | cut -d' ' -f3
@@ -73,7 +69,6 @@ utils:list_functions() {
 
 utils:help() {
   declare help="print the help of all functions (the declare help='...')"
-  # TODO add bash-utils env var to help (TRACE, UTILS_DEBUG, ...)
   [[ -z ${UTILS_HELP_HEADER:-} ]] || echo "${UTILS_HELP_HEADER:-}"
   local sh_name=$(basename "${BASH_SOURCE[-1]}")
   echo "Usage : $sh_name [--help | script_function_name [ARGS]...]"
@@ -84,6 +79,12 @@ utils:help() {
     [[ -z ${help} ]] || help=" : $help"
     echo "  - ${func}${help}"
   done
+  echo "Use this environment variable to activate some features :"
+  echo "  - UTILS_DEBUG=TRACE to print each line (with line number) before execution"
+  echo "  - UTILS_DEBUG=true same as UTILS_DEBUG=TRACE but wait for a key to be pressed (UTILS_DEBUG=TERM to open a new terminal)"
+  echo "  - UTILS_PRINT_STACK_ON_ERROR=true to print the stack on error"
+  echo "  - TRACE=true to enable bash option 'xtrace' "
+
 }
 
 utils:stack() {
@@ -108,7 +109,7 @@ utils:exec() {
   if [[ ${UTILS_PRINT_TIME:-false} == true ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
     time "$@"
-    sleep 0.1
+    sleep 0.001 # sync stdin & stderr ...
     utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← $*"
   else
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → $*"
@@ -118,10 +119,10 @@ utils:exec() {
 
 utils:flock_exec() {
   declare help="run <\$2 ...> command with flock (mutex) on '/var/lock/\$1.lock' file"
-  utils:color bg_blue "→ flock_exec $1"
+  UTILS_PRINTF_ENDLINE=" " utils:color bg_blue "→ flock_exec $1"
   local lock_file="/var/lock/$1.lock"
   (
-    utils:color bg_orange "→ wait $lock_file"
+    UTILS_PRINTF_ENDLINE=" " utils:color bg_orange "→ wait $lock_file"
     flock -x 9
     utils:color bg_green "→ got $lock_file"
     shift
@@ -170,6 +171,28 @@ _utils_print_stack_and_exit_code() {
     utils:color bg_orange "exit code = $exitcode"
     exit ${exitcode}
   fi >&2
+}
+
+utils:pipe() {
+  declare help="for each lines, execute parameters and append line"
+  { set +x; } 2>/dev/null
+  local line
+  while read -r line; do
+    "$@" "$line"
+  done
+  if [[ -n $line ]]; then
+    "$@" "$line"
+  fi
+}
+
+utils:hr() {
+  declare help="print N horizontal line, N=1 by default, N is the first parameter"
+  if [[ -n ${TERM:-} ]] && [[ -z ${COLUMNS:-} ]]; then
+    COLUMNS=${COLUMNS:-$(tput cols -T "${TERM:-dumb}")}
+  fi
+  for ((i = 0; i < ${1:-1}; i++)); do
+    printf '%*s\n' "${COLUMNS:-120}" '' | tr ' ' -
+  done
 }
 
 ###################################################### GET PARAMS ######################################################
@@ -270,35 +293,17 @@ utils:get_params() {
     done
   fi
 }
-
+utils:get_param() {
+  declare help="same as 'utils:get_params' but return the first result only"
+  UTILS_GET_FIRST_PARAM=true utils:get_params "$@"
+}
 utils:has_param() {
   [[ -n $(utils:get_param "$@") ]]
 }
 
-_append_params() {
-  if [[ ${utils_params[$key]+true} ]]; then
-    utils_params[$key]+=$'\n'"$value"
-  else
-    utils_params[$key]="$value"
-  fi
-}
-
-_print_utils_params() {
-  for key in "${!utils_params[@]}"; do
-    echo "utils_params[$key]=${utils_params[$key]}"
-  done
-}
-
-_check_no_value_param_found() {
-  if [[ ${no_value_param_found} == true ]]; then
-    utils:error "ERROR : param '$1' is placed after parameter that doesn't starts by a '-' : "
-    utils:stack
-    return 1
-  fi
-}
-
 utils:parse_parameters() {
   declare help="set utils_params array from \"\$@\" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)"
+  # for key in "${!utils_params[@]}"; do echo "utils_params[$key]=${utils_params[$key]}"; done
   unset utils_params
   declare -gA utils_params
   local no_value_param_found=false
@@ -351,33 +356,22 @@ utils:parse_parameters() {
     shift || true
   done
 }
-
-utils:get_param() {
-  declare help="same as 'utils:get_params' but return the first result only"
-  UTILS_GET_FIRST_PARAM=true utils:get_params "$@"
+_check_no_value_param_found() {
+  if [[ ${no_value_param_found} == true ]]; then
+    utils:error "ERROR : param '$1' is placed after parameter that doesn't starts by a '-' : "
+    utils:stack
+    return 1
+  fi
 }
+_append_params() {
+  if [[ ${utils_params[$key]+true} ]]; then
+    utils_params[$key]+=$'\n'"$value"
+  else
+    utils_params[$key]="$value"
+  fi
+}
+
 ##################################################### PRINT COLORS #####################################################
-utils:hr() {
-  declare help="print N horizontal line, N=1 by default, N is the first parameter"
-  if [[ -z ${TERM:-} ]] && [[ -z ${COLUMNS:-} ]]; then
-    COLUMNS=120
-  fi
-  for ((i = 0; i < ${1:-1}; i++)); do
-    printf '%*s\n' "${COLUMNS:-$(tput cols -T "${TERM:-dumb}")}" '' | tr ' ' -
-  done
-}
-
-utils:pipe() {
-  # TODO help
-  { set +x; } 2>/dev/null
-  local line
-  while read -r line; do
-    "$@" "$line"
-  done
-  if [[ -n $line ]]; then
-    "$@" "$line"
-  fi
-}
 
 declare -A UTILS_COLORS=(
   [fg_black]="0;30" [fg_red]="0;31" [fg_green]="0;32" [fg_orange]="0;33" [fg_blue]="0;34" [fg_magenta]="0;35"
@@ -395,11 +389,12 @@ utils:list_colors() {
   done
 }
 utils:color() {
-  declare help="print parameters 2... with \$UTILS_PREFIX_COLOR at the beginning with color $1, except if NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
+  declare help="print parameters 2... with \$UTILS_PREFIX_COLOR at the beginning with color $1, except if UTILS_NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default"
   (
     local color params line lines date
     if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
       utils:error "ERROR : Color not found !"
+      sleep 0.001 # sync stdin & stderr ...
       echo -n "colors : "
       UTILS_PRINTF_ENDLINE=" " utils:list_colors
       echo
@@ -415,14 +410,14 @@ utils:color() {
       date=""
     fi
     lines=($params)
-    if [[ ${NO_COLOR:-false} == true ]]; then
+    if [[ ${UTILS_NO_COLOR:-false} == true ]]; then
       for line in "${lines[@]}"; do
         printf "%s%s%b" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
       done
     else
       for line in "${lines[@]}"; do
         if [[ "${line}" =~ $'\033' ]]; then
-          printf "%s%s%s%b" "${UTILS_PREFIX_COLOR:-}" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
+          printf "%s%s%b" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
         else
           printf "\e[%bm%s%s%s\e[0m%b" "$color" "${UTILS_PREFIX_COLOR:-}" "$date" "$line" "${UTILS_PRINTF_ENDLINE:-\\n}"
         fi
@@ -485,7 +480,7 @@ _init_debug() {
 }
 
 _run_debug_mode_true() {
-  if [[ ${PIPE_MAIN_STDERR:-true} == true ]]; then
+  if [[ ${UTILS_PIPE_MAIN_STDERR:-true} == true ]]; then
     # colorize stderr (default)
     "$@" </dev/null 2> >(utils:pipe utils:error 2>&1 | tee "${UTILS_DEBUG_PIPES}.stderr" >&2) | tee "${UTILS_DEBUG_PIPES}.stdout"
   else
@@ -500,9 +495,9 @@ _debug() {
   if [[ $sh_source != "bash-utils.sh" ]] && [[ $BASH_COMMAND != '[[ ${UTILS_DEBUG:-false} != TRACE ]] ← [UTILS_DEBUG="TRACE"]' ]]; then
     echo
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
-      utils:pipe utils:green < <(_get_debug_trace)
+      utils:pipe utils:color bg_green < <(_get_debug_trace)
       ((utils_debug_index++))
-      sleep 0.001
+      sleep 0.001 # sync stdin & stderr ...
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
@@ -565,7 +560,7 @@ utils:debugger() {
   local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
-    sleep 0.01
+    sleep 0.001 # sync stdin & stderr ...
     utils:color bg_green "$line" >&2
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
       utils:color bg_red "→ press any key to exit" >&2
@@ -609,12 +604,12 @@ set_trap_exit_debug() {
 }
 _trap_exit_debug() {
   # TODO _trap_exit_debug
-  echo _trap_exit_debug
+  echo TODO _trap_exit_debug
 }
 
 ########################################################################################################################
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
-  IGNORE_UTILS_FUNCTIONS=false
+  UTILS_IGNORE_UTILS_FUNCTIONS=false
   main() {
     utils:help
   }
