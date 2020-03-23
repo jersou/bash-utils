@@ -1,21 +1,76 @@
 
 # Bash-utils
-
-Ce projet rassemble quelques fonctions et méthodes que j'utilise régulièrement.
-
-## Usage
-Pour l'utiliser, il faut sourcer le fichier bash-utils.sh : `source ./bash-utils.sh`
-
-Ensuite, les fonctions `utils:*` sont disponibles, par exemple : `utils:log log message test`
+Ce projet essaye de faciliter le développement et l'usage de script Bash, notamment en rassemblant
+quelques fonctions utilitaires.
 
 ![test](doc/test.png)
 
-### Les fonctions
-./bash-utils.sh --help donne :
-`Usage : bash-utils.sh [--help | script_function_name [ARGS]...]`
-et :
+## Principes
 
-Functions ('main' by default) :
+Pour utiliser ce projet, il faut sourcer le fichier `bash-utils.sh` pour ensuite appeler
+la fonction `utils:run` avec tous les arguments du script `"$@"` :
+
+```
+#!/usr/bin/env bash
+main() {
+  echo "main function"
+  test_function
+}
+test_function(){
+  test "main function"
+}
+source "./bash-utils.sh"
+utils:run "$@"
+```
+Il faut alors que tout le code du script se trouve dans des fonctions,
+sauf le code d'initailisation bien sûr (les 2 dernières lignes ci-dessus par ex),
+et que le code qui doit être appelé par défaut soit dans une fonction `main`.
+
+Si ce script est dans un fichier `my_script.sh` il est alors possible, de lancer la
+fonction `main` en lançant le script sans paramètre ou alors de lancer directement
+la fonction test avec :
+```
+./my_script test_function
+```
+
+`utils:run` lance donc la fonction passée en premier argument, si on veut passer
+des paramètres à cette fonction, `utils:run` passera les paramètres suivants, à partir
+du deuxième donc, à la fonction : 
+```
+./my_script test_function arg1 arg2
+```
+
+C'est très pratique pendant le développement pour ne tester qu'une partie du script,
+mais également pour proposer une interface en ligne de commande très simplement.
+
+Il est également possible de lancer `my_script.sh --help` pour avoir la listes des
+fonctions du script, qui peuvent donc être appelées depuis la ligne de commande.
+Dans ce cas, par défaut, les fonctions dont le nom commence par `_` ne sont pas listées
+ni accessibles depuis la ligne de commande.
+
+La fonction `utils:run` va appeler `utils:init` qui va alors définir les options de bash qui
+sont généralement considérées comme de bonnes pratiques : `errexit`, `nounset`, `pipefail`.
+
+Par défaut, la sortie standard est affichée avec la fonction `utils:error`, c'est à dire, en rouge
+en démarrant les lignes d'une croix ❌.
+
+Il est également possible de tracer très simplement les commandes qui sont exécutées
+par le script en définissant `UTILS_DEBUG=TRACE`:
+```
+UTILS_DEBUG=TRACE ./my_script test_function
+```
+Chaque ligne exécutée sera alors affichée en indiquant le numéro de ligne et les valeurs
+des variables utilisées.
+
+Avec `UTILS_DEBUG=true`, il faudra appuyer sur une touche pour passer à l'instruction du script
+suivante, c'est un mode "pas à pas". Avec `UTILS_DEBUG=TERM`, c'est également le mode
+"pas à pas" mais où le contrôle s'effectue depuis un autre terminal qui est automatiquement ouvert.
+Cet ébauche de debugger pourrait être complété d'autres modes plus tard (ajout de
+points d'arrets par exemple).
+
+## Les fonctions utilitaires
+
+Les fonctions du script bash-utils.sh sont préfixées par `utils:`  :
   - utils:color : print parameters 2... with $UTILS_PREFIX_COLOR at the beginning with color $1, except if UTILS_NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default
   - utils:countdown
   - utils:debug : print parameters in blue : 🐛  parameters
@@ -64,7 +119,8 @@ Pour vérifier s'il reste des usages de fonctions utils:* :
 grep -E "utils:[a-zA-Z0-9_]*" my_script.sh
 ```
 
-## Bonnes pratiques d'écriture de scripts bash
+
+# Bonnes pratiques d'écriture de scripts bash
 
 **⚠ Disclaimer : les pratiques indiquées ici sont considérées bonnes de mon point de vue,
 rien que dans les liens ci-dessous, les avis divergent quelques fois des miens et
@@ -84,7 +140,7 @@ mal de lectures du web, entre autre :
 * http://mywiki.wooledge.org/BashFAQ/031
 
 
-### Arrêter l'exécution dès la première erreur
+## Arrêter l'exécution dès la première erreur
 Ajouter au début du script : `set -o errexit`, toutes les commandes qui auront un code de sortie différent de 0 stopperont le déroulement du script.
 
 Cette règle est très importante. Par exemple :
@@ -150,7 +206,7 @@ Va produire cette sortie :
 
 `set -o errexit` est l'équivalent plus long de `set -e`. Privilégiez la version longue qui est plus explicite.
 
-#### ATTENTION, cette options n'est pas active dans certains cas
+### ATTENTION, cette options n'est pas active dans certains cas
 
 cf le man de bash :
 ```
@@ -226,11 +282,11 @@ out=$(test_func)  # [inherit_errexit on]
 On voit bien que malgré le `set -o errexit`, le `echo "← test_func end"` est atteint dans les
 2 premiers appels de `test_func`, malgré le `UNKNOWN_COMMAND_TO_PRODUCE_ERROR` (qui a un code de sortie de 127) !
 
-#### inherit_errexit
+### inherit_errexit
 On peut aussi voir, dans ce dernier exemple,que le `shopt -s inherit_errexit` fait arrêter le script sur le `out=$(test_func)`
 alors que sans cette option, le script continu.
 
-#### pour récupérer le code de sortie malgré le errexit
+### pour récupérer le code de sortie malgré le errexit
 
 Si l'option `errexit` est activée, on ne peut pas obtenir le code de sortie de la précédente commande avec `$?`, car
 si ce code de sortie est différent de 0, le script s'arrete en erreur...
@@ -262,7 +318,7 @@ Va produire cette sortie :
 Attention, les remarque du paragraphe `cette options n'est pas active dans certains cas`
 s'appliquent aussi à `! commande`
 
-### Détecter les variables non initialisées
+## Détecter les variables non initialisées
 Ajouter dans le script : `set -o nounset` pour que le script s'arrete en erreur si une variable non initialisée est utilisée.
 
 C'est l'équivalent plus long de `set -u`. Privilégiez la version longue qui est plus explicite.
@@ -271,7 +327,7 @@ Penser à `${my_var:-}` pour initialiser my_var à une valeur vide ou non défin
 
 
 
-### Initialiser les variables qui ont le droit d'être non initialisées
+## Initialiser les variables qui ont le droit d'être non initialisées
 
 Utiliser `${var:-default value}` pour définir une valeur par défaut si la variable
 n'est pas initialisée
@@ -282,7 +338,7 @@ file=${FILE:-foo}
 ```
 Sans ça, l'usage de `set -o nounset` arrêtera le script si une variable non initialisée est utilisée.
 
-### Détecter les erreurs lorsque l'on utilise les pipes : `cmd1 | cmd2`
+## Détecter les erreurs lorsque l'on utilise les pipes : `cmd1 | cmd2`
 Ajouter dans le script : `set -o pipefail` pour que le code d'erreur soit celui de la première
 commande et non celle utilisée dans le pipe.
 
@@ -336,7 +392,7 @@ UNKNOWN_COMMAND_TO_PRODUCE_ERROR | true   # pipefail on -- errexit on
 ./test.sh: ligne 23: UNKNOWN_COMMAND_TO_PRODUCE_ERROR : commande introuvable
 ```
 
-#### PIPESTATUS
+### PIPESTATUS
 à noter que la variable `$PIPESTATUS` contient le code de retour de la commande à droite du pipe.
 C'est même un tableau :
 ```
@@ -370,15 +426,15 @@ exit 1 | exit 0 : exitcode=0 - $PIPESTATUS=1 0
 
 
 
-### Mettre tout le code dans des fonctions
+## Mettre tout le code dans des fonctions
 
 Permet de clarifier le code, exécuter une fonction en particulier, ...
 
-### Utiliser une fonction main pour le code principal
+## Utiliser une fonction main pour le code principal
 
-### Utiliser `my_func() { ... }` plutôt que `function my_func { ... }`
+## Utiliser `my_func() { ... }` plutôt que `function my_func { ... }`
 
-### Utiliser des variables plutôt que des paramètres
+## Utiliser des variables plutôt que des paramètres
 
 Plus discutable ! Mais très pratique, cela évite pas mal de code de gestion
 des paramètres et avec l'option `set -o nounset`, on détecte facilement les
@@ -443,7 +499,7 @@ foo(){
 Ça redevient plus cours mais il faut gérer l'ordre des paramètres et c'est moins clair coté
 appelant (le param numéro X correspond à quoi, ...).
 
-### Détecter si le script est sourcé ou exécuté
+## Détecter si le script est sourcé ou exécuté
 
 N'exécuter main seulement si le script est exécuté et pas sourcé :
 ```
@@ -455,21 +511,21 @@ fi
 "sourcé" signifie `source ./my_script.sh` ou `. ./my_script.sh`, qui revient à importer le code en
 quelque sorte, il est exécuté en réalité, et ses fonctions sont alors dorénavant accessibles.
 
-### Utiliser snake_case pour les noms des variables et des fonctions
+## Utiliser snake_case pour les noms des variables et des fonctions
 
-### `#!/usr/bin/env bash` plutôt que `#!/bin/bash`
+## `#!/usr/bin/env bash` plutôt que `#!/bin/bash`
 
-### Utilise Shellcheck pour détecter les erreurs
+## Utilise Shellcheck pour détecter les erreurs
 
-### Utilise shfmt pour formater le code
+## Utilise shfmt pour formater le code
 
-### Utiliser un IDE pour écrire des scripts
+## Utiliser un IDE pour écrire des scripts
 Les IDE récents, notamment Intellij, permettent d'écrire du code bash en détectant
 des erreurs potentielles et en formatant le code, comme n'importe quel langage.
 
 shfmt et shellsheck sont inclus dans Intellij par exemple.
 
-### Utiliser `trap` pour déclencher du code à la fin du script ou sur une erreur
+## Utiliser `trap` pour déclencher du code à la fin du script ou sur une erreur
 ```
 trap cleanup EXIT ERR
 ```
@@ -484,7 +540,7 @@ cleanup() {
 }
 ```
 
-### Utiliser des namespaces
+## Utiliser des namespaces
 
 Bash ne propose pas de namespaces à proprement parler, mais on peut nommer les fonctions
 avec un préfixe commun pour identifier les fonctions d'un script ou d'une partie donnée.
@@ -496,7 +552,7 @@ mysh:foo(){ ... }
 mysh:bar(){ ... }
 ```
 
-### Faire des tests unitaires avec bats
+## Faire des tests unitaires avec bats
 https://github.com/bats-core/bats-core
 ```
 @test "addition using bc" {
@@ -505,14 +561,14 @@ https://github.com/bats-core/bats-core
 }
 ```
 
-### utiliser version longue des paramètres
+## utiliser version longue des paramètres
 `curl --show-error ...` plutôt que `curl -S ...`
 
-### Utiliser ${var} plutôt que $var
+## Utiliser ${var} plutôt que $var
 
 à nuancer
 
-### Naviguer dans les dossiers depuis un subshell
+## Naviguer dans les dossiers depuis un subshell
 
 ```
 (
@@ -527,7 +583,7 @@ do_something
 cd ..
 ```
 
-### Fonctions privées
+## Fonctions privées
 Pour les fonctions qui ne sont pas destinées à être utilisées dans d'autres scripts,
 On peut préfixer le nom de la fonction par `_` et ne pas utiliser de préfixe de namespace :
 ```
@@ -538,9 +594,9 @@ my_script:my_func() {
 }
 ```
 
-## Astuces
+# Astuces
 
-### Activer l'affichage des commandes exécutées si TRACE=1
+## Activer l'affichage des commandes exécutées si TRACE=1
 Placer `[[ ${TRACE:-0} != 1 ]] || set -o xtrace` dans le script pour activer l'affichage
 des lignes de code exécutées facilement.
 
@@ -548,7 +604,7 @@ Pour lancer le script en mode debug : `TRACE=1 ./my_script.sh`
 
 `set -o xtrace` est la version longue de `set -x`
 
-### Permettre l'exécution d'une fonction en particulier
+## Permettre l'exécution d'une fonction en particulier
 
 Par exemple, si on passe des paramètres au script :
 ```
@@ -564,7 +620,7 @@ Si on exécute ce script avec `./my_script.sh test_function arg1 arg2`,
 C'est très pratique pour le dev, debug et les TUs entre autre, ou pour proposer des
 fonctionnalités facilement depuis la ligne de commande.
 
-### Pour documenter l'aide d'une fonction
+## Pour documenter l'aide d'une fonction
 
 ```
 my_func ()
@@ -576,7 +632,7 @@ eval "$(type my_func | grep 'declare help=')"
 echo $help
 ```
 
-### Pour les projets versionnés avec git
+## Pour les projets versionnés avec git
 Vous pouvez
 ```
   GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
@@ -585,7 +641,7 @@ Ensuite il est possible de se déplacer dans les dossiers du projet ou référen
 absolu, c'est pratique car en cas de déplacement d script, les chemins restent valides.
 
 
-### Utiliser flock pour exécuter une partie du code une seule fois en même temps
+## Utiliser flock pour exécuter une partie du code une seule fois en même temps
 
 ```
 lock_file=/var/lock/my_script.lock
@@ -599,14 +655,11 @@ lock_file=/var/lock/my_script.lock
 ```
 
 
-## TODO list
+# TODO list
 
 * écrire la version anglaise du README
 * permettre l'ajout de l'horodatage aux lignes de stderr et ou stdout
-* proposer script/sed pour supprimer les fonctions utils:* qui pourrait être utilisées dans
-un script où on voudrait enlever la dépendance :
-  * remplacer les `log`/`warn`/... par des echo
-  * supprimer les `utils:exec`
 * ajout de "local" dans les bonnes pratiques
+* mettre à jour le script  remove_bash-utils.sh
 * traiter les TODO du code
 
