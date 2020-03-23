@@ -131,7 +131,7 @@ utils:exec() {
   if [[ ${UTILS_PRINT_TIME:-START} == true ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
     time "$@"
-    sleep 0.00001 # sync stdin & stderr ...
+    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
     utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← " $(_add_quote_to_params "$@")
   elif [[ ${UTILS_PRINT_TIME:-START} == START ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
@@ -385,7 +385,7 @@ utils:color() {
     local color params line lines date
     if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
       utils:error "ERROR : Color not found !"
-      sleep 0.00001 # sync stdin & stderr ...
+      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
       echo -n "colors : "
       UTILS_PRINTF_ENDLINE=" " utils:list_colors
       echo
@@ -431,47 +431,47 @@ utils:debug() {
 utils:error() {
   declare help=$'print parameters in red to stderr : \e[0;31m❌  parameters\e[0m'
   UTILS_PREFIX_COLOR="${UTILS_ICONS[error]} " utils:color fg_red "${@}" 1>&2
+  [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
 }
 utils:warn() {
   declare help=$'print parameters in orange to stderr : \e[0;33m️⚠️  parameters\e[0m'
   UTILS_PREFIX_COLOR="${UTILS_ICONS[warn]}  " utils:color fg_orange "${@}" 1>&2
+  [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
 }
 ######################################################## DEBUG #########################################################
 
 _init_debug() {
   if [[ ${UTILS_DEBUG:-false} != false ]]; then
     export UTILS_DEBUG_CALL_LEVEL=$((${UTILS_DEBUG_CALL_LEVEL:-0} + 1))
-
     if [[ ${UTILS_DEBUG_CALL_LEVEL} -le ${UTILS_DEBUG_CALL_LEVEL_LIMIT:-2} ]]; then
       set -o functrace
       trap '_debug "${BASH_SOURCE[0]}" "$LINENO"' DEBUG
       utils_debug_index=1
-
       if [[ ${UTILS_DEBUG} != "TRACE" ]]; then
         UTILS_DEBUG_PIPES="$(mktemp -u)-UTILS_DEBUG"
         mkfifo -m 600 "${UTILS_DEBUG_PIPES}.out" "${UTILS_DEBUG_PIPES}.in"
-        utils:color bg_orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : " >&2
-        utils:log "${UTILS_DEBUG_PIPES}.out" >&2
-        utils:log "${UTILS_DEBUG_PIPES}.in" >&2
+        utils:color bg_orange "DEBUG fifo (UTILS_DEBUG_PIPES=${UTILS_DEBUG_PIPES}) : "
+        utils:log "${UTILS_DEBUG_PIPES}.out"
+        utils:log "${UTILS_DEBUG_PIPES}.in"
         _set_trap_exit_debug
       fi
       if [[ ${UTILS_DEBUG} == "TERM" ]]; then
         # TODO other terminals ? auto detect term emu
         if command -v gnome-terminal >/dev/null && [[ -n $DISPLAY ]]; then
-          utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null >&2
+          utils:exec gnome-terminal --window -- bash -c "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" 2>/dev/null
         else
-          utils:color bg_red "TO DEBUG, RUN :" >&2
-          echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+          utils:color bg_red "TO DEBUG, RUN :"
+          echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
         fi
       elif [[ ${UTILS_DEBUG} == "REMOTE" ]]; then
-        utils:color bg_red "TO DEBUG, RUN :" >&2
-        echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger" >&2
+        utils:color bg_red "TO DEBUG, RUN :"
+        echo "UTILS_DEBUG_PIPES='${UTILS_DEBUG_PIPES}' '${BASH_SOURCE}' utils:debugger"
       elif [[ ${UTILS_DEBUG} == true ]]; then
-        utils:color bg_orange "UTILS_DEBUG=true" >&2
+        utils:color bg_orange "UTILS_DEBUG=true"
         UTILS_DEBUG_CALL_LEVEL_LIMIT=1
       fi
     fi
-  fi
+  fi >&2
 }
 
 _run_debug_mode_true() {
@@ -492,7 +492,7 @@ _debug() {
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
       utils:pipe utils:color bg_green < <(_get_debug_trace)
       ((utils_debug_index++))
-      sleep 0.00001 # sync stdin & stderr ...
+      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
@@ -555,10 +555,10 @@ utils:debugger() {
   local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
-    sleep 0.00001 # sync stdin & stderr ...
-    utils:color bg_green "$line" >&2
+    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
+    utils:color bg_green "$line"
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
-      utils:color bg_red "→ press any key to exit" >&2
+      utils:color bg_red "→ press any key to exit"
       read -s -r -n 1 cmd
       if [[ ${UTILS_DEBUG} != true ]]; then
         echo continue >"${UTILS_DEBUG_PIPES}.in"
@@ -567,10 +567,10 @@ utils:debugger() {
       exit 0
     fi
     # TODO add switch case and other command/menu : continue N times, print env, print var '$...', exec '...', add breakpoint, ...
-    utils:color bg_blue "→ press any key to continue" >&2
+    utils:color bg_blue "→ press any key to continue"
     read -s -r -n 1 cmd
     echo continue >"${UTILS_DEBUG_PIPES}.in"
-  done
+  done >&2
 }
 
 _cleanup_debug() {

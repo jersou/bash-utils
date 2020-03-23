@@ -17,6 +17,7 @@ color_print() {
   utils:info "info message"
   utils:error "error message"
   utils:warn "warn message"
+  sleep 0.0001 # sleep to sync stderr and stdout
   utils:color bg_red "red message"
   utils:color bg_green "green message"
   utils:hr
