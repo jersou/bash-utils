@@ -16,39 +16,36 @@ Ensuite, les fonctions `utils:*` sont disponibles, par exemple : `utils:log log 
 et :
 
 Functions ('main' by default) :
+  - utils:color : print parameters 2... with $UTILS_PREFIX_COLOR at the beginning with color $1, except if UTILS_NO_COLOR=true, use UTILS_PRINTF_ENDLINE=\n by default
   - utils:countdown
   - utils:debug : print parameters in blue : 🐛  parameters
+  - utils:debugger
   - utils:error : print parameters in red to stderr : ❌  parameters
   - utils:exec : print parameter with blue background and execute parameters, print time if UTILS_PRINT_TIME=true
   - utils:flock_exec : run <$2 ...> command with flock (mutex) on '/var/lock/$1.lock' file
   - utils:get_param : same as 'utils:get_params' but return the first result only
   - utils:get_params : print parameter value $1 from "$@", if $1 == '--' print last parameters that doesn't start with by '-' ---- ='e|error' return 'value' for '--error=value' or '-e=value' ---- accept '--error value' and '-e value' if ='e |error '
-  - utils:has_param : same as 'utils:get_params' but return exit code 0 if the key is found, 1 otherwise
+  - utils:has_param
   - utils:help : print the help of all functions (the declare help='...')
   - utils:hr : print N horizontal line, N=1 by default, N is the first parameter
+  - utils:info : print parameters in green : ℹ️  parameters
   - utils:init : init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true
-  - utils:list_functions : utils_params_values all functions of the parent script
+  - utils:list_colors
+  - utils:list_functions : list all functions of the parent script, set UTILS_HIDE_PRIVATE_FUNCTIONS!= true to list _* functions
   - utils:log : print parameters in green : ℹ️  parameters
   - utils:parse_params : set utils_params array from "$@" : --error=msg -a=123 -zer=5 opt1 'opt 2' -- file --opt3 →→ utils_params = [error]=msg ; [--]=opt1 / opt 2 / file / --opt3 ; [z]=5 ; [r]=5 ; [e]=5 ; [a]=123 (/ is \n here)
+  - utils:pipe : for each lines, execute parameters and append line
   - utils:run : run utils:init and run the main function or the function $1, add color and use utils:pipe utils:error for stderr except if UTILS_PIPE_MAIN_STDERR!=true
   - utils:stack : print current stack
   - utils:warn : print parameters in orange to stderr : ️⚠️  parameters
 
 ## Les variables d'environnement
 
-TODO
-
-  - UTILS_DEBUG
-  - UTILS_DEBUG_PIPES
-  - UTILS_ZENITY_DEBUG
-  - UTILS_PRINT_STACK_ON_ERROR
-  - TRACE
-  - UTILS_TRACE
-  - UTILS_PRINTF_ENDLINE
-  - UTILS_HIDE_PRIVATE_FUNCTIONS
-  - UTILS_IGNORE_UTILS_FUNCTIONS
-
-TODO
+Use this environment variable to activate some features :
+  - UTILS_DEBUG=TRACE to print each line (with line number) before execution
+  - UTILS_DEBUG=true same as UTILS_DEBUG=TRACE but wait for a key to be pressed (UTILS_DEBUG=TERM to open a new terminal)
+  - UTILS_PRINT_STACK_ON_ERROR=true to print the stack on error
+  - TRACE=true to enable bash option 'xtrace' 
 
 ## Supprimer les usages de bash-utils.sh
 Il y un script qui permet de supprimer les usages des fonctions de `bash-utils.sh`
