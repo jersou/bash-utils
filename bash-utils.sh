@@ -6,6 +6,7 @@
 # TODO zenity debug print
 # TODO see sh and README TODOs
 # TODO add UTILS_LOG_LEVEL to hide debug/info/warn/error msg if the level is too high
+# TODO FIXME [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
 
 utils:init() {
   declare help="init bash options: errexit, nounset, pipefail, xtrace if TRACE==true, trap _utils_print_stack_and_exit_code if UTILS_PRINT_STACK_ON_ERROR==true"
@@ -43,6 +44,7 @@ utils:run() {
       utils:debugger
     else
       if [[ ${UTILS_PIPE_MAIN_STDERR:-true} == true ]]; then
+        export UTILS_NO_COLOR
         "$@" 2> >(utils:pipe utils:error >&2) # colorize stderr (default)
       else
         "$@"
@@ -131,7 +133,7 @@ utils:exec() {
   if [[ ${UTILS_PRINT_TIME:-START} == true ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
     time "$@"
-    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
+    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.01 # to sync stderr and stdout
     utils:color bg_blue "← $(date +%Y-%m-%d-%H.%M.%S) ← " $(_add_quote_to_params "$@")
   elif [[ ${UTILS_PRINT_TIME:-START} == START ]]; then
     utils:color bg_blue "→ $(date +%Y-%m-%d-%H.%M.%S) → " $(_add_quote_to_params "$@")
@@ -385,7 +387,7 @@ utils:color() {
     local color params line lines date
     if ! [[ ${UTILS_COLORS[$1]+true} ]]; then
       utils:error "ERROR : Color not found !"
-      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
+      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.01 # to sync stderr and stdout
       echo -n "colors : "
       UTILS_PRINTF_ENDLINE=" " utils:list_colors
       echo
@@ -555,7 +557,7 @@ utils:debugger() {
   local line
   while true; do
     read -r line <"${UTILS_DEBUG_PIPES}.out"
-    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
+    [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.01 # to sync stderr and stdout
     utils:color bg_green "$line"
     if [[ "$line" == "#[DEBUG]exit 0" ]]; then
       utils:color bg_red "→ press any key to exit"
