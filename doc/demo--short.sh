@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 main() {
   cd "${BASH_SOURCE[0]%/*}"
   utils:color bg_purple './demo--short.sh color_print arg1 arg2'
@@ -8,10 +7,10 @@ main() {
   ./demo--short.sh params_test --key=test file1 "file 2"
   utils:color bg_purple 'UTILS_DEBUG=TRACE ./demo--short.sh get_params_test --key=val'
   UTILS_DEBUG=TRACE ./demo--short.sh get_params_test --key=val
+  sleep 0.0001 # sleep to sync stderr and stdout
   utils:color bg_purple './demo--short.sh --help'
   ./demo--short.sh --help
 }
-
 color_print() {
   declare help="print example messages"
   utils:info "info message"
@@ -23,8 +22,8 @@ color_print() {
   utils:hr
   utils:exec echo stdout message "$(basename "$0") $*"
   echo stderr message 1>&2
-  sleep 0.0001      # sleep to sync stderr and stdout
-  utils:countdown 3 # = sleep 3
+  sleep 0.0001 # sleep to sync stderr and stdout
+  # utils:countdown 3 # = sleep 3
 }
 params_test() {
   declare help="check params"
@@ -43,7 +42,6 @@ _parse_params_test() {
     echo "    utils_params[$key]=${utils_params[$key]}"
   done
 }
-
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # not being sourced
   GIT_TOPLEVEL=$(cd "${BASH_SOURCE[0]%/*}" && git rev-parse --show-toplevel)
   # shellcheck source=./bash-utils.sh

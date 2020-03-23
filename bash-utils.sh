@@ -492,7 +492,7 @@ _debug() {
     if [[ ${UTILS_DEBUG:-false} == "TRACE" ]]; then
       utils:pipe utils:color bg_green < <(_get_debug_trace)
       ((utils_debug_index++))
-      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.0001 # to sync stderr and stdout
+      [[ ${UTILS_STDERR_SLEEP:-true} != true ]] || sleep 0.01 # to sync stderr and stdout
     elif [[ ${UTILS_DEBUG:-false} != false ]]; then
       _send_debug_trace
       _debug_command
