@@ -405,6 +405,7 @@ exit 1 | exit 0
 echo "exit 1 | exit 0 : exitcode=$? - \$PIPESTATUS=${PIPESTATUS[@]}"
 
 echo '→ set -o pipefail'
+set -o pipefail
 
 exit 0 | exit 1 | exit 2 | exit 3
 echo "exit 0 | exit 1 | exit 2 | exit 3 : exitcode=$? - \$PIPESTATUS=${PIPESTATUS[@]}"
@@ -421,7 +422,7 @@ exit 1 | exit 0 : exitcode=0 - $PIPESTATUS=1 0
 → set -o pipefail
 exit 0 | exit 1 | exit 2 | exit 3 : exitcode=3 - $PIPESTATUS=0 1 2 3
 exit 0 | exit 1 : exitcode=1 - $PIPESTATUS=0 1
-exit 1 | exit 0 : exitcode=0 - $PIPESTATUS=1 0
+exit 1 | exit 0 : exitcode=1 - $PIPESTATUS=1 0
 ```
 
 
