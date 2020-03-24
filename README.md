@@ -242,7 +242,7 @@ echo 'test_func || echo "err_||"'
 test_func || echo "err_||"
 
 echo '------------------- 1 -------------------'
-echo 'if ! test_func ; then echo "err_if"; fi :'
+echo 'if test_func ; then echo "err_if"; fi :'
 if test_func ; then echo "err_if"; fi
 
 echo '------------------- 2 -------------------'
@@ -263,7 +263,7 @@ test_func || echo "err_||"
 ./test.sh: ligne 7: UNKNOWN_COMMAND_TO_PRODUCE_ERROR : commande introuvable
 ← test_func end
 ------------------- 1 -------------------
-if ! test_func ; then echo "err_if"; fi :
+if test_func ; then echo "err_if"; fi :
 → test_func begin
 ./test.sh: ligne 7: UNKNOWN_COMMAND_TO_PRODUCE_ERROR : commande introuvable
 ← test_func end
