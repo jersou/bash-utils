@@ -206,7 +206,17 @@ Va produire cette sortie :
 
 `set -o errexit` est l'équivalent plus long de `set -e`. Privilégiez la version longue qui est plus explicite.
 
-### ATTENTION, cette options n'est pas active dans certains cas
+### MAIS ATTENTION, cette options n'est pas active dans certains cas
+
+Ce problème fait que l'option `errexit` n'est pas toujours considérée comme une bonne pratique ! à raison car le comportement
+n'est pas du tout celui attendu !
+
+Quelques liens sur ce sujet :
+- http://mywiki.wooledge.org/BashFAQ/105 ← voir la partie `Exercises` en bas !
+- https://stackoverflow.com/questions/29926013/exit-subshell-on-error ← ` I think it is good reason to hate both set -e and shell scripting in general.`
+- https://david.rothlis.net/shell-set-e/ ← `Bash experts seem to agree: “never rely on set -e” (gnu.bash.bug, BashFAQ). The recommendation is to do your own error checking by stringing together a series of commands with “&&”`
+- https://fvue.nl/wiki/Bash:_Error_handling ← `Opinions differ about whether it's wise to use set -e, because of its seemingly non-intuitive problems...`
+- https://www.in-ulm.de/~mascheck/various/set-e/
 
 cf le man de bash :
 ```
@@ -225,6 +235,7 @@ even if -e is set and a command returns a failure status.  If a compound command
 sets -e while executing in a context where -e is ignored, that setting will not have any effect until the
 compound command or the command containing the function call completes.
 ```
+
 Donc, attention, `errexit` ne marchera pas pour le code d'une fonction dont l'appel est suivi
 de `||` ou `&&` ou inclus dans un if ! Par exemple :
 ```
@@ -317,6 +328,57 @@ Va produire cette sortie :
 
 Attention, les remarque du paragraphe `cette options n'est pas active dans certains cas`
 s'appliquent aussi à `! commande`
+
+
+Un contournement possible pour exécuter une fonction et savoir si elle a échouée
+tout en gardant l'option le principe de `errexit` actif (TODO à compléter) :
+```
+#!/usr/bin/env bash
+set -o errexit
+shopt -s inherit_errexit
+func_ko() {
+  (exit 3)
+  echo "← func_ko end ⚠️ ⚠️ ⚠️"
+}
+func_ok() {
+  echo "→ func_ok"
+}
+fake_exit_code_func() { # "exit code" is 0 if true exit code is 0, else 1
+  local ex=$("$@" >&2; echo 0) # FIXME : stdout stderr are merged
+  if [[ $ex = 0 ]]; then
+    echo 0
+  else
+    echo 1
+  fi
+}
+echo "--- if func_ko; then echo pb; fi :"
+if func_ko; then echo ok-0; else echo ko-0; fi
+
+echo "--- if [[ $(fake_exit_code_func func_ko) = 0 ]] :"
+if [[ $(fake_exit_code_func func_ko) = 0 ]]; then echo ok-1; else echo ko-1; fi
+
+echo "--- if [[ \$fake_exit_code = 0 ]] :"
+fake_exit_code=$(fake_exit_code_func func_ko)
+if [[ $fake_exit_code = 0 ]]; then echo ok-2; else echo ko-2; fi
+
+echo "fake_exit_code_func func_ko = $(fake_exit_code_func func_ko)"
+echo "fake_exit_code_func func_ok = $(fake_exit_code_func func_ok)"
+```
+`← func_ko end` ne sera pas affiché avec `fake_exit_code_func`, mais la sortie standard de `fake_exit_code_func` sera `1`.
+La sortie du script :
+```
+--- if func_ko; then echo pb; fi :
+← func_ko end ⚠️ ⚠️ ⚠️
+ok-0
+--- if [[ 1 = 0 ]] :
+← func_ko end ⚠️ ⚠️ ⚠️
+ok-1
+--- if [[ $fake_exit_code = 0 ]] :
+ko-2
+fake_exit_code_func func_ko = 1
+→ func_ok
+fake_exit_code_func func_ok = 0
+```
 
 ## Détecter les variables non initialisées
 Ajouter dans le script : `set -o nounset` pour que le script s'arrete en erreur si une variable non initialisée est utilisée.
