@@ -603,6 +603,24 @@ _trap_exit_debug() {
   # TODO _trap_exit_debug
   echo TODO _trap_exit_debug
 }
+######################################################### WIP ##########################################################
+_utils_errexit_disable_test() {
+  false
+  true
+}
+utils:try_func() { # "exit code" is 0 if true exit code is 0, else 1
+  declare help='print 0 if exit code of "$@" is 0, else print 1'
+  local ex=$(
+    "$@" >&2 # FIXME : stdout stderr are merged to stderr
+    echo 0
+  )
+  if [[ ${ex} == 0 ]]; then echo 0; else echo 1; fi
+}
+utils:exit_if_errexit_concept_is_disabled() {
+  declare help='exit if errexit concept is disabled, prevent usage of function with : while, until, if, elif , && , ||,  !, and | (if pipefail is enable)'
+  local errexit_disable=$(utils:try_func _utils_errexit_disable_test)
+  [[ ${errexit_disable} == 0 ]] && utils:error "errexit concept is disable ! The function is used with : while, until, if, elif , && , ||,  !, or |" && exit 5 || true
+}
 ########################################################################################################################
 if [[ $0 == "${BASH_SOURCE[0]}" ]]; then # if the script is not being sourced
   UTILS_IGNORE_UTILS_FUNCTIONS=false

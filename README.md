@@ -236,8 +236,20 @@ sets -e while executing in a context where -e is ignored, that setting will not 
 compound command or the command containing the function call completes.
 ```
 
-Donc, attention, `errexit` ne marchera pas pour le code d'une fonction dont l'appel est suivi
-de `||` ou `&&` ou inclus dans un if ! Par exemple :
+**Donc, attention, `errexit` ne marchera pas pour le code d'une fonction dont l'appel est utilisé dans :
+while, until, if, elif , && , ||,  !, and | (si pipefail est activé)** :
+- while cmd; ...
+- until cmd; ...
+- if cmd; ...
+- elif cmd; ...
+- cmd && ...
+- cmd || ...
+- ! cmd
+- set -o pipefail; cmd | ...
+
+**Ça fait beaucoup de cas !**
+ 
+ Par exemple :
 ```
 #!/usr/bin/env bash
 
@@ -422,6 +434,78 @@ fake_exit_code_func func_ko = 1
 fake_exit_code_func func_ok = 0
 ```
 
+### tester si le principe de `errexit` est actif
+```
+#!/usr/bin/env bash
+set -o errexit
+shopt -s inherit_errexit
+fake_exit_code_func() { # "exit code" is 0 if true exit code is 0, else 1
+  local ex=$("$@" >&2; echo 0) # FIXME : stdout stderr are merged
+  if [[ $ex = 0 ]]; then echo 0; else echo 1; fi
+}
+_errexit_disable_test() { false; true; }
+check_errexit_disable() { echo $(fake_exit_code_func _errexit_disable_test); }
+
+func_ok() {
+  local errexit_disable=$(check_errexit_disable)
+  echo "➡ func_ok begin ✅"
+  [[ $errexit_disable = 0 ]] && echo "😒 errexit disable 😒" && return 5 # "return→exit" to end script here
+  # check_errexit_disable
+  echo "👍 errexit enable 👍"
+  echo "✅ func_ok end ✅"
+}
+
+func_ko_without_check() {
+  echo "🤞 func_ko_without_check begin 🤞"
+  (echo "💥 make error 💥"; exit 3)
+  echo "🔥 func_ko_without_check end 🔥"
+}
+
+func_ko() {
+  echo "➡ func_ko begin ❌"
+  local errexit_disable=$(check_errexit_disable)
+  [[ $errexit_disable = 0 ]] && echo "😒 errexit disable 😒" && return 5 # replace return by exit to end script here
+  # check_errexit_disable
+  echo "👍 errexit enable 👍"
+  (echo "💥 make error 💥"; exit 3)
+  echo "⚠️ func_ko end ⚠️"
+}
+
+echo '$ func_ok || echo "⏩ exit code = $?"'
+func_ok || echo "⏩ exit code = $?" # ← errexit disable 😒, because of ||
+echo '$ func_ok'
+func_ok
+echo '$ func_ko_without_check || echo "⏩ exit code = $?"'
+func_ko_without_check || echo "⏩ exit code = $?" # ← errexit disable 😒, because of ||
+echo '$ func_ko || echo "⏩ exit code = $?"'
+func_ko || echo "⏩ exit code = $?" # ← errexit disable 😒, because of ||
+echo '$ func_ko'
+func_ko # ← errexit enable 👍  end script on "(exit 3)"
+echo "⇨ unreachable..."
+```
+donne :
+```
+$ func_ok || echo "exit code = $?"
+    ➡ func_ok begin ✅
+    😒 errexit disable 😒
+    ⏩ exit code = 5
+$ func_ok
+    ➡ func_ok begin ✅
+    👍 errexit enable 👍
+    ✅ func_ok end ✅
+$ func_ko_without_check || echo "exit code = $?"
+    🤞 func_ko_without_check begin 🤞
+    💥 make error 💥
+    🔥 func_ko_without_check end 🔥
+$ func_ko || echo "exit code = $?"
+    ➡ func_ko begin ❌
+    😒 errexit disable 😒
+    ⏩ exit code = 5
+$ func_ko
+    ➡ func_ko begin ❌
+    👍 errexit enable 👍
+    💥 make error 💥
+```
 
 ## Détecter les variables non initialisées
 Ajouter dans le script : `set -o nounset` pour que le script s'arrete en erreur si une variable non initialisée est utilisée.
