@@ -302,6 +302,8 @@ alors que sans cette option, le script continu.
 Si l'option `errexit` est activée, on ne peut pas obtenir le code de sortie de la précédente commande avec `$?`, car
 si ce code de sortie est différent de 0, le script s'arrete en erreur...
 
+#### avec `!`
+
 une astuce consiste alors à utiliser `!` devant la commande, qui autorise la commande à échouer,
 mais où on peut alors récupérer le code de sortie dans `${PIPESTATUS[0]}`:
 ```
@@ -329,6 +331,46 @@ Va produire cette sortie :
 Attention, les remarque du paragraphe `cette options n'est pas active dans certains cas`
 s'appliquent aussi à `! commande`
 
+#### avec `&& true`
+
+```
+#!/usr/bin/env bash
+set -e
+
+false && true
+echo "false && true → $? ← exit code of 'false'"
+
+f1() { false && true; echo f1-end; }
+f2() { false && true; }
+
+f1 && true
+echo "f1 && true    → $? ← exit code of 'echo f1-end'"
+
+f1
+echo "f1            → $? ← exit code of 'echo f1-end'"
+
+f2 && true
+echo "f2 && true    → $? ← exit code of 'false && true'"
+
+echo "'f2' exit script with the exit code = 1"
+f2
+echo "f2            → $?"
+```
+Va produire :
+```
+false && true → 1 ← exit code of 'false'
+f1-end
+f1 && true    → 0 ← exit code of 'echo f1-end'
+f1-end
+f1            → 0 ← exit code of 'echo f1-end'
+f2 && true    → 1 ← exit code of 'false && true'
+'f2' exit script with the exit code = 1
+```
+
+Attention, les remarque du paragraphe `cette options n'est pas active dans certains cas`
+s'appliquent aussi à `commande && true`
+
+### pour tester une fonction en gardant le principe de `errexit` actif
 
 Un contournement possible pour exécuter une fonction et savoir si elle a échouée
 tout en gardant l'option le principe de `errexit` actif (TODO à compléter) :
@@ -379,6 +421,7 @@ fake_exit_code_func func_ko = 1
 → func_ok
 fake_exit_code_func func_ok = 0
 ```
+
 
 ## Détecter les variables non initialisées
 Ajouter dans le script : `set -o nounset` pour que le script s'arrete en erreur si une variable non initialisée est utilisée.
